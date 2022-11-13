@@ -1,0 +1,186 @@
+<mjml>
+    <!-- HEAD -->
+    <mj-head>
+        <mj-attributes>
+            <mj-class name="white" color="white" />
+            <mj-class name="blue" color="blue" />
+            <mj-class name="big" font-weight="bold" />
+            <mj-all font-family="Verdana" />
+        </mj-attributes>
+        <mj-style>
+            @media (min-width: 760px) {
+                .text-top {
+                    font-size: 12px;
+                }
+                .text-foot {
+                    font-size: 12px;
+                }
+            }
+        </mj-style>
+        <mj-style>
+            @media (min-width: 1024px) {
+                .text-top {
+                    font-size: 14px;
+                }
+            }
+        </mj-style>
+             <mj-style>
+            @media (min-width: 1024px) {
+                .sizes {
+                    width: 30px;
+                }
+            }
+        </mj-style>
+    </mj-head>
+    <!-- BODY -->
+    <mj-body>
+        <!-- TOP -->
+        <mj-section background-color="black">
+            <mj-group>
+                <mj-column width="50%">
+                    <mj-image align="left" 
+                                src="./assets/img/Att.png"
+                                width="100px">
+                    </mj-image>
+                </mj-column>
+                <mj-column width="50%">
+                    <mj-text align="right"
+                                color="white"
+                                font-size="10px">
+                        <div class="text-top">
+                            Your online bill is ready,<br/>
+                            Robin
+                        </div>
+                    </mj-text>
+                </mj-column>
+            </mj-group>
+        </mj-section>
+        <!-- MAIN -->
+        <mj-wrapper>
+            <!-- VIEW BILL/SCHEDULE PAYMENT-->
+            <mj-section>
+                <mj-column>
+                    <mj-text>Hi ROBIN,</mj-text>
+                    <mj-text>Your new AT&T bill is available now at myAT&T.</mj-text>
+                    <mj-text>Service: Wireless<br/>
+                            Account number: 38383838<br/>
+                            Payment due: 11/11/2099<br/>
+                            Bill total: $11.11<br/>
+                            User ID: <a href="mjml.io" <a style="color:#1122ff; text-decoration:none;" target="_blank">your@email.com</a>
+                    </mj-text>
+                    <mj-text>You've got AutoPay so your bill will automatically be paid by its due date.</mj-text>
+                    <mj-text>Heads up: Your total balance doesn't include any payments you made after your bill period ended. Want to see more recent payments and your current balance? Sign in to myAT&T and check your account overview or bill & payments info:</mj-text>
+                    <mj-button align="left" width="240px" background-color="#1122ff" color="white" href="https://mjml.io/">
+                        View your bill
+                    </mj-button>
+                    <mj-button align="left" width="240px" background-color="#1122ff" color="white" href="https://mjml.io/">
+                        Schedule a payment
+                    </mj-button>
+                    <mj-text></mj-text>  
+                    <mj-text>Not managing your account with myAT&T yet? Signing up is easy:</mj-text>
+                    <mj-button align="left" width="240px" background-color="#1122ff" color="white" href="https://mjml.io/">
+                        Sign up for myAT&T now
+                    </mj-button>
+                    <mj-text></mj-text>
+                    <mj-text>Thanks for choosing us,</br>
+                        AT&T
+                    </mj-text>
+                </mj-column>
+            </mj-section>
+            <!-- SUPPORT TOPICS -->
+            <mj-section>
+                <mj-column>
+                    <mj-text font-weight="bold">Popular support topics</mj-text>
+                    <mj-text><a style="color:#1122ff; text-decoration:none;" href="" target="_blank">Optimize your internet speed</a></mj-text>
+                    <mj-text><a style="color:#1122ff; text-decoration:none;" href="" target="_blank">Manage internet data usage</a></mj-text>
+                    <mj-text><a style="color:#1122ff; text-decoration:none;" href="" target="_blank">Set up a mobile hotspot</a></mj-text>
+                </mj-column>
+            </mj-section>
+            <!-- ICONS -->
+            <mj-section>
+                <mj-column>
+                    <mj-image align="center" 
+                                src="./assets/img/lock.png"
+                                width="80px">
+                    </mj-image>
+                    <mj-text align="center">
+                            <a style="color:#1122ff; text-decoration:none;" href="">Forgot your password?</a>
+                            </br> 
+                            No Problem. Resetting your password is easy.
+                    </mj-text>
+                </mj-column>
+                 <mj-column>
+                    <mj-image align="center" 
+                                src="./assets/img/ball.png"
+                                width="80px">
+                    </mj-image>
+                    <mj-text align="center">
+                            <a style="color:#1122ff; text-decoration:none;" href="">Understand your bill</a>
+                            </br> 
+                            Get info about your bill and payment options.
+                    </mj-text>
+                </mj-column>
+                 <mj-column>
+                    <mj-image align="center" 
+                                src="./assets/img/tools.png"
+                                width="80px">
+                    </mj-image>
+                    <mj-text align="center">
+                            <a style="color:#1122ff; text-decoration:none;" href="">Need help?</a>
+                            </br> 
+                            Fix common internet issues.
+                    </mj-text>
+                </mj-column>
+            </mj-section>
+        </mj-wrapper>
+        <!-- FOOTER -->
+        <mj-wrapper>
+            <!--TOP-->
+            <mj-section padding="20px 0 0 0" background-color="#333333">
+                <mj-group>
+                    <mj-column width="80%">
+                        <mj-text font-size="10px">
+                            <div class="text-foot">
+                                <a href="" style="color:#ffffff">Sign-in myAT&T Account</a> | 
+                                <a href="" style="color:#ffffff">AT&T Support</a> | 
+                                <a href="" style="color:#ffffff">Contact Us</a>
+                            </div>
+                        </mj-text>
+                        <mj-text mj-class="white">TTY and relay services available</mj-text>
+                    </mj-column>
+                    <mj-column width="20%">
+                        <mj-social padding="10px 0px 10px" icon-size="30px" mode="horizontal">
+                            <mj-social-element padding="0px 5px" name="facebook" href="https://mjml.io/">
+                              
+                            </mj-social-element>
+                            <mj-social-element padding="0px 5px" name="twitter" href="https://mjml.io/">
+                          
+                            </mj-social-element>
+                        </mj-social>
+                    </mj-column>
+                </mj-group>
+            </mj-section>
+            <!--BOTTOM-->
+            <mj-section padding="10px 0 0 0" background-color="#333333">
+                <mj-column width="100%">
+                    <mj-text></br></mj-text>
+                    <mj-text align="left" padding-top="0" mj-class="white">
+                        Please do not reply to this message.</br>
+                        All replies are automatically deleted. For questions regarding this message, refer to the contact information listed above.
+                    </mj-text>
+                    <mj-text align="left" mj-class="white">
+                        ©2022 AT&T Intellectual Property. All rights reserved. 
+                        AT&T, Globe logo, and DIRECTV are registered trademarks of AT&T intellectual property and/or AT&T affiliated companies. 
+                        All other marks are the property of their respective owners.</br>
+                        <a style="color:#fff" href="">AT&T Privacy Policy</a></br>
+                        <a style="color:#fff" href="">DIRECTV Privacy Policy</a>
+                    </mj-text>
+                    <mj-image align="center"
+                                src="./assets/img/endBall.png"
+                                width="60px"
+                                padding="0"> 
+                </mj-column>
+            </mj-section>
+         </mj-wrapper>
+    </mj-body>
+</mjml>
