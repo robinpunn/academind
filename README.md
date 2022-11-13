@@ -9,28 +9,35 @@
 ---
 ---
 
-[MJML download instructions](https://mjml.io/download)
+<a href="https://mjml.io/download" target="_blank">MJML download instructions</a>
 
 ---
 ---
 
-</br>
 ##### Setting up an mjml project with node
+
 </br>
 
-1. In your project folder, initialize json and install mjml   
+<p>In your project folder, initialize json and install mjml</p>   
+
  ```npm init -y && npm install mjml```
+
 </br>    
 
-2. Add MJML to path
-    ```export PATH="$PATH:./node_modules/.bin"```
+<p>Add MJML to path</p>
+
+```export PATH="$PATH:./node_modules/.bin"```
+
 </br>
 
-3. Create mjml file
-    ``` touch index.mjml ```
+<p>Create mjml file</p>
+
+``` touch index.mjml ```
+
 </br>
 
-4. Populate mjml file with some code. 
+<p>Populate mjml file with some code.</p> 
+
 ```
         <mjml>
             <mj-head>
@@ -54,23 +61,30 @@
 
 ```
 
-5. MJML output to html can be viewed on the command line
+<p>MJML output to html can be viewed on the command line.</p>
 
 ```
     mjml index.mjml
 ```
- 6. Create an output html file
+<br/>
+
+ <p>Create an output html file.</p>
+
 ```
     mjml -r index.mjml -o index.html
 ```
 
-7.Watch mjml to automatically update html file
+<br/>
+
+<p>Watch mjml to automatically update html file.</p>
+
 ```
     mjml --watch index.mjml -o index.html
 ```
+
 ----
 ----
-[MJML Documentation](https://documentation.mjml.io/)
+<a href="https://documentation.mjml.io/" target="_blank"> MJML Documentation </a>
 
 ---
 ---
