@@ -20,13 +20,13 @@
 
 <p>In your project folder, initialize json and install mjml</p>   
 
- ```npm init -y && npm install mjml```
+ ``` npm init -y && npm install mjml ```
 
 </br>    
 
 <p>Add MJML to path</p>
 
-```export PATH="$PATH:./node_modules/.bin"```
+``` export PATH="$PATH:./node_modules/.bin" ```
 
 </br>
 
