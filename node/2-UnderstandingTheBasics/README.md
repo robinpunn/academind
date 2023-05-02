@@ -8,7 +8,7 @@
 1. [Creating a Node Server](#creating-a-node-server)
     - [Core Modules](#core-modules)
     - [HTTP](#http)
-1. [The Node Lifecycle & Event Loop](#the-node-lifecycle-&-event-loop)
+1. [The Node Lifecycle and Event Loop](#the-node-lifecycle-and-event-loop)
     - [Starting the Server](#starting-the-server)
     - [The Event Loop](#the-event-loop)
 1. [Understanding Requests](#understanding-requests)
@@ -89,7 +89,7 @@ server.listen(3000)
 - port 80 is the default port for http, port 443 is the default port for https, and port 3000 is the default port for nodejs
     - we can use any port we want, but we have to make sure it's not being used by another process
 
-### The Node Lifecycle & Event Loop
+### The Node Lifecycle and Event Loop
 #### Starting the Server
 - file is executed (``node app.js``)
     - starts the script
@@ -219,7 +219,7 @@ req.on('data', (chunk) => {
         - ``refs`` is incremented when a new event handler is added and decremented when an event handler is removed
         - createServer and listen prevent the loop from exiting
 
-### Using the Nodes Modules System
+### Using the Node Modules System
 - The main file of a nodejs project is the entry point of the application
 ```js
 const http = require("http");
