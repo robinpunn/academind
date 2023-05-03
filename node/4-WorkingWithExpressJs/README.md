@@ -12,6 +12,10 @@
 1. [Handling Different Routes](#handling-different-routes)
 1. [Parsing Incoming Requests](#parsing-incoming-requests)
 1. [Limiting Middleware Execution to POST Requests](#limiting-middleware-execution-to-post-requests)
+1. [Using Express Router](#using-express-router)
+1. [Adding a 404 Error Page](#adding-a-404-error-page)
+1. [Filtering Paths](#filtering-paths)
+1. [Creating HTML Pages](#creating-html-pages)
 ---
 
 ### What is Express?
@@ -381,3 +385,156 @@ app.use(bodyParser.urlencoded({ extended: false }));
 - just as ``path`` is a form of filtering, ``app.get()`` is a form of filtering for get requests
 **app.post()**
 - filtering for ``post`` requests
+
+### Using Express Router
+- When an app gets large enough, it is a good idea to split routing code into multiple files
+- With Express, placing routing logic into a ``routes`` folder is standard practice
+
+```js
+// admin.js
+const express = require('express');
+const router = express.Router();
+
+router.get("/addproduct", (req, res, next) => {
+  res.send(...);
+});
+
+router.post("/product", (req, res, next) => {
+  res.redirect("...");
+});
+
+module.exports = router
+```
+- Router is like a mini express app which can be exported
+
+```js
+// app.js
+{...}
+const adminRoutes = require('./routes/admin');
+{...}
+app.use(adminRoutes)
+{...}
+```
+- importing the route file requires a relative path to the routes folder (the ``.js`` extension can be omitted)
+- router is a valid middleware function so it can be used as an argument in ``app.use()``
+- the order matters, so placing ``app.use(adminRoutes)`` after a ``res.send()`` means ``app.use(adminRoutes)`` will never be executed
+
+**exact matching**
+- When using paths, ``.use()`` does not use exact matching, so the order is important when arranging code as some code may be skipped if placed incorrectly
+- other methods like ``.get()`` and ``.post()`` use exact matching for paths
+
+### Adding a 404 Error Page
+- We add a 'catch all' middleware at the bottom that doesn't require a path (default path is ``'/'``)
+```js
+app.use((req, res, next) => {
+  res.status(404).send("<h1>Page not found</h1>");
+});
+```
+- we can change the ``status`` method before any ``send`` method.
+    - if chained, ``send`` has to be the last method (it can't be in the middle of a chain)
+
+### Filtering Paths
+- The same path can be used with different methods
+```js
+// admin.js
+router.get('/add-product'...)
+router.post('/add-product'...)
+```
+- we can 'strip out' the path from the file and add it to ``app.js`` as a filter
+```js
+// app.js
+app.use('/admin', adminRoutes)
+```
+- Implicitly, these routes are now reached with ``'/admin'`` path
+```js
+// admin.js
+router.get('/add-product'...) // /admin/add-product => GET
+router.post('/add-product'...) // /admin/add-product => POST
+```
+
+### Creating HTML Pages
+- In the ``Model View Controller`` format, we use a ``views`` folder to manage what we serve to the user
+**res.sendFile**
+- sendFile(path: string, fn?: Errback | undefined): void
+    - Transfer the file at the given path.
+    - Automatically sets the Content-Type response header field. The callback fn(err) is invoked when the transfer is complete or when an error occurs.
+        - Be sure to check res.headersSent if you wish to attempt responding, as the header and some data may have already been transferred.
+- Options:
+    - **maxAge** defaulting to 0 (can be string converted by ms)
+    - **root** root directory for relative filenames
+    - **headers** object of headers to serve with file
+    - **dotfiles** serve dotfiles, defaulting to false; can be "allow" to send them
+- Other options are passed along to send.
+*Examples*
+- The following example illustrates how res.sendFile() may be used as an alternative for the static() middleware for dynamic situations.
+- The code backing res.sendFile() is actually the same code, so HTTP cache support etc is identical.
+```js
+app.get('/user/:uid/photos/:file', function(req, res){
+  var uid = req.params.uid
+    , file = req.params.file;
+
+  req.user.mayViewFilesFrom(uid, function(yes){
+    if (yes) {
+      res.sendFile('/uploads/' + uid + '/' + file);
+    } else {
+      res.send(403, 'Sorry! you cant see that.');
+    }
+  });
+});
+```
+- Using either one of these syntaxes will throw an error:
+```js
+router.get("/", (req, res, next) => {
+  res.sendFile("/views/shop.html");
+});
+
+router.get("/", (req, res, next) => {
+  res.sendFile("./views/shop.html");
+});
+```
+- We can use a core module from node, ``path``, to help with using a path with send file
+```js
+const path = require('path');
+
+router.get("/", (req, res, next) => {
+  res.sendFile(path.join(__dirname, '../','views', 'shop.html'));
+});
+```
+- ``join(...paths: string[])``: string
+    - paths to join.
+    - Join all arguments together and normalize the resulting path.
+    - @throws - {TypeError} if any of the path segments is not a string.
+- ``__dirname`` is a global variable that holds the absolute path on our OS to the project folder
+
+### Using a Helper Function for Navigation
+- instead of using ``__dirname``, we can use a helper function that points to the root directory
+```js
+ const path = require('path')
+
+ module.exports = path.dirname(require.main.filename);
+```
+
+- ``dirname(path: string)``: string
+    - the path to evaluate.
+    - Return the directory name of a path. Similar to the Unix dirname command.
+    - @throws - {TypeError} if path is not a string.
+
+- We can import the utility function to the desired file
+```js
+const rootDir = require('../util/path')
+
+router.get("/add-product", (req, res, next) => {
+  res.sendFile(path.join(rootDir, "views", "add-product.html"));
+});
+```
+- The helper function is a cleaner approach that using ``__dirname`` and should work on all operating systems
+
+### Serving Files Statically
+- Normally, we would point to our css files when app gets served
+- the convention is to use a folder call ``public``
+```js
+app.use(express.static(path.join(__dirname, "public")));
+```
+- This is a built-in middleware function in Express.
+    - It serves static files and is based on serve-static.
+    - It allows us to grant read-access to a folder
