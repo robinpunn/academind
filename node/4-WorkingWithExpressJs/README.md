@@ -16,6 +16,9 @@
 1. [Adding a 404 Error Page](#adding-a-404-error-page)
 1. [Filtering Paths](#filtering-paths)
 1. [Creating HTML Pages](#creating-html-pages)
+1. [Using a Helper Function for Navigation](#using-a-helper-function-for-navigation)
+1. [Serving Files Statically](#serving-files-statically)
+1. [Wrap Up](#wrap-up)
 ---
 
 ### What is Express?
@@ -538,3 +541,24 @@ app.use(express.static(path.join(__dirname, "public")));
 - This is a built-in middleware function in Express.
     - It serves static files and is based on serve-static.
     - It allows us to grant read-access to a folder
+
+### Wrap up
+**What is Express.js?**
+- Express.js is a node framework - a package that adds a bunch of utility functions and tools and a clear set of rules on how the app should be built (middleware)
+- It's highly extensible and other packages can be plugged into it (middleware)
+
+**Middleware, next(), and res()**
+- Express.js relies heavily on middleware functions - you can easily add them by calling ``use()``
+- Middleware functions handle a request and should call ``next()`` to forward the request to the next function in line or send a response
+- Unless you're sending a request, you should always call ``next()``
+    - if you are calling ``res()``, then don't call ``next()``
+
+**Routing**
+- You can filter requests by path and method
+- If you filter by method, paths are matched exactly, otherwise, the first segment of a URL is matched
+- You can use express.Router to split your routes across files elegantly
+
+**Serve Files**
+- You are not limited to serving dummy text as a response
+- You can send files to your users - e.g. HTML files
+- If a request is directly made for a file (e.g. a .css file is requested), you can enable static serving for such files via ``express.static()``
