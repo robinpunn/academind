@@ -1,0 +1,19 @@
+<%- include("includes/head.ejs") %>
+  <body>
+    <%- include("includes/navigation.ejs") %>
+    <main>
+      <% if (users.length> 0) { %>
+      <div class="grid">
+        <% for (let user of users) { %>
+        <article class="card users-user">
+          <header class="card__header">
+            <h1 class="users__user"><%= user.user %></h1>
+          </header>
+        </article>
+        <% } %>
+      </div>
+      <% } else { %>
+      <h1>No Users Found</h1>
+      <% } %>
+    </main>
+    <%- include("includes/end.ejs") %>

@@ -8,15 +8,15 @@ const app = express();
 app.set("view engine", "ejs");
 app.set("views", "views");
 
-const adminData = require("./routes/admin");
-const shopRoutes = require("./routes/shop");
-const errorRoute = require("./routes/404");
+const addRoute = require("./routes/users");
+const usersRoute = require("./routes/add-user");
+const errorRoute = require("./routes/404")
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/admin", adminData.routes);
-app.use(shopRoutes);
-app.use(errorRoute);
+app.use(addRoute);
+app.use(usersRoute.routes);
+app.use(errorRoute)
 
 app.listen(3000);
