@@ -9,7 +9,11 @@
 1. [Templating Engines](#templating-engines)
    - [Available Templating Engines](#available-templating-engines)
 1. [Installing and Implementing PUG](#installing-and-implementing-pug)
-
+1. [Outputting Dynamic Content](#outputting-dynamic-content)
+1. [Adding A Layout](#adding-a-layout)
+1. [Working with Handlebars](#working-with-handlebars)
+1. [Working with EJS](#working-with-ejs)
+1. [Useful Resources & Links](#useful-resources--links)
 ---
 
 ### Sharing Data Across Requests & Users
@@ -438,3 +442,7 @@ app.set("view engine", "ejs");
   </body>
 </html>
 ```
+### Useful Resources & Links
+- Pug Docs: https://pugjs.org/api/getting-started.html
+- Handlebars Docs: https://handlebarsjs.com/
+- EJS Docs: http://ejs.co/#docs
