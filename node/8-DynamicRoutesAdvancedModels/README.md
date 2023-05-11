@@ -3,6 +3,18 @@
 ---
 ### Table of Contents
 1. [Adding the Product Id to the Path](#adding-the-product-id-to-the-path)
+1. [Extracting Dynamic Params](#extracting-dynamic-params)
+1. [Loading Product Detail Data](#loading-product-detail-data)
+1. [Rendering the Product Detail View](#rendering-the-product-detail-view)
+1. [Passing Data with Post Requests](#passing-data-with-post-requests)
+1. [Adding a Cart Model](#adding-a-cart-model)
+1. [Using Query Params](#using-query-params)
+1. [Pre-Populating the Edit Product Page with Data](#pre-populating-the-edit-product-page-with-data)
+1. [Editing Product Data](#editing-product-data)
+1. [Adding the Product-Delete Functionality](#adding-the-product-delete-functionality)
+1. [Deleting Cart Items](#deleting-cart-items)
+1. [Displaying Cart Items on the Cart Page](#displaying-cart-items-on-the-cart-page)
+1. [Module Summary](#module-summary)
 ---
 
 ### Adding the Product Id to the Path
@@ -345,3 +357,165 @@ exports.postEditProduct = (req, res, next) => {
   updatedProduct.save();
 };
 ```
+
+### Adding the Product-Delete Functionality
+- First step is to start with a router
+```js
+router.post("/delete-product");
+```
+- We have a form in ``product.ejs`` where we can add a hidden input
+```html
+   <form action="/admin/delete-product" method="POST">
+    <button class="btn" type="submit">Delete</button>
+    <input type="hidden" value="<%= product.id %>" name="productId">
+   </form>
+```
+- Next, we can start the controller:
+```js
+exports.postDeleteProduct = (req, res, next) => {
+  const prodId = req.body.productId;
+};
+```
+- But the bulk of the work is in creating a delete method in the ``Product`` model:
+```js
+  static deleteById(id) {
+    getProductsFromFile((products) => {
+      const updatedProducts = products.filter((prod) => prod.id !== id);
+      fs.writeFile(p, JSON.stringify(updatedProducts), err => {
+        if (!err) {
+
+        }
+      });
+    });
+  }
+```
+- The empty if block will contain logic to remove from cart
+
+### Deleting Cart Items
+- add a static method to ``Cart``:
+```js
+  static deleteProduct(id, productPrice) {
+    fs.readFile(p, (err, fileContent) => {
+      if (err) {
+        return;
+      }
+      const updatedCart = { ...JSON.parse(fileContent) };
+      const product = updatedCart.products.find((prod) => prod.id === id);
+      const productQty = product.qty;
+      updatedCart.products = updatedCart.products.filter(
+        (prod) => prod.id !== id
+      );
+      updatedCart.totalPrice -= productPrice * productQty;
+
+      fs.writeFile(p, JSON.stringify(updatedCart), (err) => {
+        console.log(err);
+      });
+    });
+  }
+};
+```
+- update ``deleteById`` in ``Product``... have to import ``Cart``:
+```js
+const Cart = require("./cart");
+{...}
+static deleteById(id) {
+    getProductsFromFile((products) => {
+      const product = products.find((prod) => prod.id === id);
+      const updatedProducts = products.filter((prod) => prod.id !== id);
+      fs.writeFile(p, JSON.stringify(updatedProducts), (err) => {
+        if (!err) {
+          Cart.deleteProduct(id, product.price);
+        }
+      });
+    });
+  }
+```
+- Create a controller to handle deleting:
+```js
+exports.postDeleteProduct = (req, res, next) => {
+  const prodId = req.body.productId;
+  Product.deleteById(prodId);
+  res.redirect("/admin/products");
+};
+```
+
+### Displaying Cart Items on the Cart Page
+- Add a static function to ``Cart`` to get products added to cart:
+```js
+  static getCart(cb) {
+    fs.readFile(p, (err, fileContent) => {
+      const cart = JSON.parse(fileContent);
+      if (err) {
+        cb(null);
+      } else {
+        cb(cart);
+      }
+    });
+  }
+```
+- Update ``getCart`` in shop.js:
+```js
+exports.getCart = (req, res, next) => {
+  Cart.getCart((cart) => {
+    Product.fetchAll((products) => {
+      const cartProducts = [];
+      for (item of products) {
+        const cartProductData = cart.products.find(
+          (prod) => prod.id === item.id
+        );
+        if (cartProductData) {
+          cartProducts.push({ productData: item, qty: cartProductData.qty });
+        }
+      }
+      res.render("shop/cart", {
+        path: "/cart",
+        pageTitle: "Your Cart",
+        products: cartProducts,
+      });
+    });
+  });
+};
+```
+- Update the ``cart.ejs`` file:
+```html
+<%- include("../includes/head.ejs") %>
+  </head>
+  <body>
+    <%- include("../includes/navigation.ejs") %>
+    <main>
+      <% if (products.length > 0) { %>
+        <ul>
+          <% products.forEach(p => { %>
+            <li><%= p.productData.title %> (<%= p.qty %>)</li>
+          <% }) %>
+        </ul>
+      <% } else {%>
+        <h1>No products in cart...</h1>
+      <% } %>
+    </main>
+<%- include("../includes/end.ejs") %>
+```
+- Add controller to ``shop.js``:
+```js
+exports.postCartDeleteProduct = (req, res, next) => {
+  const prodId = req.body.productId;
+  Product.findById(prodId, (product) => {
+    Cart.deleteProduct(prodId, product.price);
+    res.redirect("/cart");
+  });
+};
+```
+
+### Module Summary
+**Dynamic Routing**
+- You can pass dynamic path segments by adding a ":" to the Express router path
+- The name you add after ":" is the name by which you can extract the data on req.params
+- Optional (query) parameters can also be passed
+    - (?param=value&b=2) and extracted (req.query.myParam)
+
+**More on Models**
+- A cart was added - it holds static methods only
+- You can interact between models (e.g. delete cart item if a product is deleted)
+- Working with files for data storage is suboptimal for bigger amounts of data
+
+**Official Routing Docs**: https://expressjs.com/en/guide/routing.html
