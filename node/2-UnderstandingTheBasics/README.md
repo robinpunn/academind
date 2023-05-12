@@ -27,7 +27,6 @@
 1. [Summary](#summary)
 1. [Resources](#resources)
 
-
 ---
 
 ### How the Web Works
@@ -277,3 +276,4 @@ server.listen(3000);
 - Full Node.js Reference (for all core modules): https://nodejs.org/dist/latest/docs/api/
 - More about the Node.js Event Loop: https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/
 - Blocking and Non-Blocking Code: https://nodejs.org/en/docs/guides/dont-block-the-event-loop/
+- Modules: https://stackify.com/node-js-module-exports/
