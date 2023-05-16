@@ -3,6 +3,19 @@
 ---
 ### Table of Contents
 1. [What is Sequelize](#what-is-sequelize)
+1. [Connecting to the Database](#connecting-to-the-database)
+1. [Defining a Model](#defining-a-model)
+1. [Syncing JS Defintions to the Database](#syncing-js-defintions-to-the-database)
+1. [Inserting Data and Creating a Product](#inserting-data-and-creating-a-product)
+1. [Retrieving Data and Finding Products](#retrieving-data-and-finding-products)
+1. [Updating Products](#updating-products)
+1. [Deleting Products](#deleting-products)
+1. [Creating a User Model](#creating-a-user-model)
+1. [Adding a One-To-Many Relationship](#adding-a-one-to-many-relationship)
+1. [Creating and Managing a Dummy User](#creating-and-managing-a-dummy-user)
+1. [One-to-Many & Many-To-Many relations](#one-to-many--many-to-many-relations)
+1. [Adding an Order Model](#adding-an-order-model)
+1. [Wrap up](#wrap-up)
 ---
 
 ### What is Sequelize
@@ -355,3 +368,278 @@ Executing (default): CREATE TABLE IF NOT EXISTS `products` (`id` INTEGER NOT NUL
 Executing (default): SHOW INDEX FROM `products`
 ```
 - docs: https://sequelize.org/docs/v6/moved/associations/
+
+### Creating and Managing a Dummy User
+```js
+sequelize
+  // .sync({ force: true })
+  .sync()
+  .then((result) => {
+    return User.findByPk(1)
+  })
+  .then(user => {
+    if (!user) {
+      return User.create({name: 'Robin', email: 'test@test.com'})
+    }
+    return Promise.resolve(user)
+  })
+  .then(user => {
+    console.log(user)
+    app.listen(3000);
+  })
+  .catch((err) => console.log(err));
+```
+- The purpose of ``Promise.resolve()`` is typically to wrap a non-promise value and ensure it is always returned as a promise.
+    - In this case, ``user`` is already a promise (resulting from the previous asynchronous operation), so there is no practical difference between using ``return user`` and ``return Promise.resolve(user)``.
+- We register a middleware to exectute a request for incoming functions:
+```js
+app.use((req, res, next) => {
+  User.findByPk(1)
+    .then((user) => {
+      req.user = user;
+      next();
+    })
+    .catch((err) => console.log(err));
+});
+```
+- In our admin controller, we add user parameter which requests the Sequelize user object which holds methods and the user id:
+```js
+  Product.create({
+    title: title,
+    price: price,
+    imageUrl: imageUrl,
+    description: description,
+    userId: req.user.id
+  })
+```
+- We can use a more elegant method to get the user with a Sequelize method
+```js
+ exports.postAddProduct = (req, res, next) => {
+  const title = req.body.title;
+  const imageUrl = req.body.imageUrl;
+  const price = req.body.price;
+  const description = req.body.description;
+  req.user
+    .createProduct({
+      title: title,
+      price: price,
+      imageUrl: imageUrl,
+      description: description,
+    })
+    .then((result) => {
+      console.log("Created a Product");
+      res.redirect("/admin/products");
+    })
+    .catch((err) => console.log(err));
+};
+ ```
+ - Sequelize uses a build in ``create`` method and combines it with our ``Product`` model
+ - We can do the same with ``getEditProducts``:
+ ```js
+ exports.getEditProduct = (req, res, next) => {
+  const editMode = req.query.edit;
+  if (!editMode) {
+    return res.redirect("/");
+  }
+  const prodId = req.params.productId;
+  req.user
+    .getProducts({ where: { id: prodId } })
+    // Product.findByPk(prodId)
+    .then((products) => {
+      const product = products[0];
+      if (!product) {
+        return res.redirect("/");
+      }
+      res.render("admin/edit-product", {
+        pageTitle: "Edit Product",
+        path: "/admin/edit-product",
+        editing: editMode,
+        product: product,
+      });
+    })
+    .catch((err) => console.log(err));
+};
+```
+
+### One-to-Many & Many-To-Many relations
+- We start by recreating the ``Cart`` model:
+```js
+// models/cart.js
+const Sequelize = require('sequelize')
+
+const sequelize = require('../util/database')
+
+const Cart = sequelize.define('cart', {
+  id: {
+    type: Sequelize.STRING,
+    autoIncrement: true,
+    allowNull: false,
+    primaryKey: true
+  }
+})
+
+module.exports = Cart
+```
+- We have to create a new ``CartItem`` model and create new associations for it :
+```js
+// models/cart-item.js
+const Sequelize = require('sequelize')
+
+const sequelize = require('../util/database')
+
+const CartItem = sequelize.define('cartItem', {
+  id: {
+    type: Sequelize.STRING,
+    autoIncrement: true,
+    allowNull: false,
+    primaryKey: true
+  },
+  quantity: Sequelize.INTEGER
+})
+
+module.exports = CartItem
+```
+- In ``app.js`` we import the cart models and use middleware for associations:
+```js
+// app.js
+const Cart = require("./models/cart")
+const CartItem = require("./models/cart-item")
+
+User.hasOne(Cart);
+Cart.belongsTo(User);
+Cart.belongsToMany(Product, { through: CartItem });
+Product.belongsToMany(Cart, { through: CartItem });
+```
+- We update the ``getCart`` controller:
+```js
+exports.getCart = (req, res, next) => {
+  req.user
+    .getCart()
+    .then((cart) => {
+      return cart
+        .getProducts()
+        .then((products) => {
+          res.render("shop/cart", {
+            path: "/cart",
+            pageTitle: "Your Cart",
+            products,
+          });
+        })
+        .catch((err) => console.log(err));
+    })
+    .catch((err) => console.log(err));
+};
+```
+
+### Adding an Order Model
+- Just like the ``Cart`` model, we create two models for orders
+- The first is the ``Order`` model:
+```js
+const Sequelize = require("sequelize");
+
+const sequelize = require("../util/database");
+
+const Order = sequelize.define("order", {
+  id: {
+    type: Sequelize.INTEGER,
+    autoIncrement: true,
+    allowNull: false,
+    primaryKey: true,
+  },
+});
+
+module.exports = Order;
+```
+- The second is the ``OrderItem`` model:
+```js
+const Sequelize = require("sequelize");
+
+const sequelize = require("../util/database");
+
+const OrderItem = sequelize.define("orderItem", {
+  id: {
+    type: Sequelize.INTEGER,
+    autoIncrement: true,
+    allowNull: false,
+    primaryKey: true,
+  },
+  quantity: Sequelize.INTEGER,
+});
+
+module.exports = OrderItem;
+```
+- Then we add the ``postOrder`` controller:
+```js
+exports.postOrder = (req, res, next) => {
+  req.user
+    .getCart()
+    .then((cart) => {
+      return cart.getProducts();
+    })
+    .then((products) => {
+      req.user
+        .createOrder()
+        .then((order) => {
+          return order.addProducts(
+            products.map((product) => {
+              product.orderItem = { quantity: product.cartItem.quantity };
+              return product;
+            })
+          );
+        })
+        .catch((err) => console.log(err));
+      console.log(products);
+    })
+    .then((result) => res.redirect("/orders"))
+    .catch((err) => console.log(err));
+};
+```
+- Along with the route:
+```js
+router.post("/create-order", shopController.postOrder);
+```
+- Resetting the cart after adding an order:
+```js
+
+exports.postOrder = (req, res, next) => {
+  let fetchedCart;
+  req.user
+    .getCart()
+    .then((cart) => {
+      fetchedCart = cart;
+      return cart.getProducts();
+    })
+    .then((products) => {
+      req.user
+        .createOrder()
+        .then((order) => {
+          return order.addProducts(
+            products.map((product) => {
+              product.orderItem = { quantity: product.cartItem.quantity };
+              return product;
+            })
+          );
+        })
+        .catch((err) => console.log(err));
+      console.log(products);
+    })
+    .then((result) => {
+      return fetchedCart.setProducts(null);
+    })
+    .then((result) => res.redirect("/orders"))
+    .catch((err) => console.log(err));
+};
+```
+
+### Wrap up
+**SQL**
+- SQL uses strict data schemas and relations
+- You can connect your node.js app via packages like mysql2
+- Writing SQL queries is not directly related to Node.js and something you have to learn in addition to Node.js
+
+**Sequelize**
+- Instead of writing SQL queries manually, you can use packages (ORMs) like Sequelize to focus on the Node.js code and work with native JS objects
+- Sequelize allows you to define models and interact with the database through them
+- You can easily set up relations ("Associations") and interact with your models through them
+
+**Sequelize Official Docs**: http://docs.sequelizejs.com/
