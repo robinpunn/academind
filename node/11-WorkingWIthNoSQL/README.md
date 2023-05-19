@@ -1,7 +1,6 @@
 ## Working with NoSQL and Using MongoDB
 
 ---
-
 ### Table of Contents
 1. [What is MongoDB](#what-is-mongodb)
 1. [Relations in NoSQL](#relations-in-nosql)
