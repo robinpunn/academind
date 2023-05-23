@@ -29,6 +29,19 @@
     - [Function Types & Callbacks](#function-types--callbacks)
     - [The "unknown" type](#the-unknown-type)
     - [The 'never' type](#the-never-type)
+1. [The TypeScript Compiler](#the-typescript-compiler)
+    - [Using "Watch Mode"](#using-watch-mode)
+    - [Compiling the Entire Project/ Multiple Files](#compiling-the-entire-project-multiple-files)
+    - [Including and Excluding Files](#including-and-excluding-files)
+    - [Setting a Compilation Target](#setting-a-compilation-target)
+    - [Understanding TypeScript Core Libraries](#understanding-typescript-core-libraries)
+    - [More Configuration and Compilation Options](#more-configuration-and-compilation-options)
+    - [Working with Source Maps](#working-with-source-maps)
+    - [rootDir and outDir](#rootdir-and-outdir)
+    - [Emiting Files on Compilation Errors](#emiting-files-on-compilation-errors)
+    - [Strict Compilation](#strict-compilation)
+    - [Code Quality Options](#code-quality-options)
+    - [Useful Resources and Links](#useful-resources--links)
 ---
 
 ---
@@ -681,3 +694,156 @@ function generateError(message: string, code: number) {
 ```
 - The return type of the above function is listed as ``void`` but it is also ``never``
 - We would use ``never`` when if we want to make it clear that the function in question shouldn't be returning anything like in the case of the above function which always throws an error
+
+---
+### The TypeScript Compiler
+#### Using "Watch Mode"
+- Rather than havin to type ``tsc app.js`` every time we want to compile, we can use either of these commands to "watch" a file:
+```bash
+tsc app.ts --watch
+
+tsc app.ts --w
+```
+- This file will be "watched" and any changes made will be auto compiled
+
+#### Compiling the Entire Project/ Multiple Files
+```bash
+tsc --init
+```
+- This command initializes the project folder as a TS project and creates a ``tsconfig.json`` file
+- Now all we need to do is run ``tsc`` without pointing to any files and all ``.ts`` files in the project will be compiled
+- We can also combine this with ``-w`` to watch all ``.ts`` files in the project:
+```bash
+tsc --w
+```
+
+#### Including and Excluding Files
+- The ``ts.config`` file tells TS how it should compile
+- We can add an ``exclude`` array to add paths of files that should not be compiled
+```js
+  "exclude": [
+    "*.dev.ts"
+  ]
+```
+- Using ``"**/*.dev.ts"`` means any file with this pattern in any folder will be ignored
+- It's normal to have ``node_modules`` in ``exclude``, but ``node_modules`` is excluded as a default setting
+- There is also an ``include`` array
+    - If ``include`` is used then all files we want compiled must be placed here
+- We can also use a ``files`` array
+    - The difference from ``inculde`` is that ``files`` can't add paths
+
+#### Setting a Compilation Target
+- We can also configure how files are compiled
+```js
+"target": "es2016", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+```
+- With ``target``, we can use TS to compile for older browsers
+
+#### Understanding TypeScript Core Libraries
+- ``lib`` handles things like DOM apis
+```js
+"lib": [], /* Specify a set of bundled library declaration files that describe the target runtime environment. */
+```
+- If ``lib`` is not set, the defaults depend on the JS ``target``
+
+#### More Configuration and Compilation Options
+```js
+"allowJs": true,  /* Allow JavaScript files to be a part of your program. Use the 'checkJS' option to get errors from these files. */
+"checkJs": true,  /* Enable error reporting in type-checked JavaScript files. */
+```
+- The options above can be used if you don't want to use TS but want to use some of its features with JS
+
+#### Working with Source Maps
+```js
+"sourceMap": true,  /* Create source map files for emitted JavaScript files. */
+```
+- We can use the browser to check the js files.
+- Using source map also allows us to see the TS files
+
+#### rootDir and outDir
+- The bigger the project gets, the more you want to organize files
+```js
+ "rootDir": "./", /* Specify the root folder within your source files. */
+ "outDir": "./", /* Specify an output folder for all emitted files. */
+ ```
+ - Projects usually have a ``src`` folder and a ``dist`` folder so we can use ``rootDir`` and ``outDir`` to specify the root folder and the folder where files should be compiled
+ - The folder structure will also be replicated when compiled
+ ```js
+ "removeComments": true,  /* Disable emitting comments. */
+ ```
+
+ #### Emiting Files on Compilation Errors
+ ```js
+ "noEmitOnError": true, /* Disable emitting files if any type checking errors are reported. */
+ ```
+ - This is false by default
+ - Setting it to true will cause the compiler to ignore compiling files if there are errors
+
+ #### Strict Compilation
+ ```json
+ /* Type Checking */
+    "strict": true,                                      /* Enable all strict type-checking options. */
+    // "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied 'any' type. */
+    // "strictNullChecks": true,                         /* When type checking, take into account 'null' and 'undefined'. */
+    // "strictFunctionTypes": true,                      /* When assigning functions, check to ensure parameters and the return values are subtype-compatible. */
+    // "strictBindCallApply": true,                      /* Check that the arguments for 'bind', 'call', and 'apply' methods match the original function. */
+    // "strictPropertyInitialization": true,             /* Check for class properties that are declared but not set in the constructor. */
+    // "noImplicitThis": true,                           /* Enable error reporting when 'this' is given the type 'any'. */
+    // "useUnknownInCatchVariables": true,               /* Default catch clause variables as 'unknown' instead of 'any'. */
+    // "alwaysStrict": true,                             /* Ensure 'use strict' is always emitted. */
+    // "noUnusedLocals": true,                           /* Enable error reporting when local variables aren't read. */
+    // "noUnusedParameters": true,                       /* Raise an error when a function parameter isn't read. */
+    // "exactOptionalPropertyTypes": true,               /* Interpret optional property types as written, rather than adding 'undefined'. */
+    // "noImplicitReturns": true,                        /* Enable error reporting for codepaths that do not explicitly return in a function. */
+    // "noFallthroughCasesInSwitch": true,               /* Enable error reporting for fallthrough cases in switch statements. */
+    // "noUncheckedIndexedAccess": true,                 /* Add 'undefined' to a type when accessed using an index. */
+    // "noImplicitOverride": true,                       /* Ensure overriding members in derived classes are marked with an override modifier. */
+    // "noPropertyAccessFromIndexSignature": true,       /* Enforces using indexed accessors for keys declared using an indexed type. */
+    // "allowUnusedLabels": true,                        /* Disable error reporting for unused labels. */
+    // "allowUnreachableCode": true,                     /* Disable error reporting for unreachable code. */
+```
+- Setting ``strict`` to true allows all of the options below it.
+- We can disable ``strict`` and chose individual options
+- We can use an ``!`` to bypass ``strictNull``:
+```js
+const button = document.querySelector('button')!;
+```
+- Or we can check if button is not null:
+```js
+const button = document.querySelector('button');
+
+if (button) {
+    button.addEventListener('click', () => {
+        console.log('Clicked');
+    })
+}
+```
+
+#### Code Quality Options
+```json
+/* Type Checking */
+    "strict": true,                                      /* Enable all strict type-checking options. */
+    // "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied 'any' type. */
+    // "strictNullChecks": true,                         /* When type checking, take into account 'null' and 'undefined'. */
+    // "strictFunctionTypes": true,                      /* When assigning functions, check to ensure parameters and the return values are subtype-compatible. */
+    // "strictBindCallApply": true,                      /* Check that the arguments for 'bind', 'call', and 'apply' methods match the original function. */
+    // "strictPropertyInitialization": true,             /* Check for class properties that are declared but not set in the constructor. */
+    // "noImplicitThis": true,                           /* Enable error reporting when 'this' is given the type 'any'. */
+    // "useUnknownInCatchVariables": true,               /* Default catch clause variables as 'unknown' instead of 'any'. */
+    // "alwaysStrict": true,                             /* Ensure 'use strict' is always emitted. */
+    // "noUnusedLocals": true,                           /* Enable error reporting when local variables aren't read. */
+    // "noUnusedParameters": true,                       /* Raise an error when a function parameter isn't read. */
+    // "exactOptionalPropertyTypes": true,               /* Interpret optional property types as written, rather than adding 'undefined'. */
+    // "noImplicitReturns": true,                        /* Enable error reporting for codepaths that do not explicitly return in a function. */
+    // "noFallthroughCasesInSwitch": true,               /* Enable error reporting for fallthrough cases in switch statements. */
+    // "noUncheckedIndexedAccess": true,                 /* Add 'undefined' to a type when accessed using an index. */
+    // "noImplicitOverride": true,                       /* Ensure overriding members in derived classes are marked with an override modifier. */
+    // "noPropertyAccessFromIndexSignature": true,       /* Enforces using indexed accessors for keys declared using an indexed type. */
+    // "allowUnusedLabels": true,                        /* Disable error reporting for unused labels. */
+    // "allowUnreachableCode": true,                     /* Disable error reporting for unreachable code. */
+```
+
+#### Useful Resources & Links
+- tsconfig Docs: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html
+- Compiler Config Docs: https://www.typescriptlang.org/docs/handbook/compiler-options.html
+- VS Code TS Debugging: https://code.visualstudio.com/docs/typescript/typescript-debugging
