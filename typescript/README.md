@@ -42,6 +42,7 @@
     - [Strict Compilation](#strict-compilation)
     - [Code Quality Options](#code-quality-options)
     - [Useful Resources and Links](#useful-resources--links)
+1. [Next-generation JavaScript & TypeScript](#next-generation-javascript--typescript)
 ---
 
 ---
@@ -847,3 +848,146 @@ if (button) {
 - tsconfig Docs: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html
 - Compiler Config Docs: https://www.typescriptlang.org/docs/handbook/compiler-options.html
 - VS Code TS Debugging: https://code.visualstudio.com/docs/typescript/typescript-debugging
+
+### Next-generation JavaScript & TypeScript
+#### let and const
+- Modern JS features [support](https://kangax.github.io/compat-table/es6/)
+- ``const`` variables cannot be reassigned:
+```js
+const userName = 'Robin'
+userName = 'Nibor'
+```
+```bash
+Cannot assign to 'userName' because it is a constant.ts(2588)
+```
+- ``let`` variabls can be reassigned:
+```js
+let age = 36
+age = 99
+```
+- ``let`` and ``const`` replace the old keyword ``var``
+- one of the key differences is the idea of scope
+- ``var`` has a global and function scope
+    - variables defined outside of a function are available everywhere wile variables defined in functions are only available in the functions
+```js
+function add(a: number, b: number) {
+    var result
+    result = a + b
+    return result
+}
+
+console.log(result) // Cannot find name 'result'
+```
+- On the other hand this would work:
+```js
+var result
+
+function add(a: number, b: number) {
+    result = a + b
+    return result
+}
+
+console.log(result) // result of a + b
+```
+- JS works by allowing us to access variables on a higher level
+- ``let`` works similar to ``var`` with the difference being ``var`` is only scoped globally and within functions
+```js
+if (age > 30) {
+    var isOld = true
+}
+
+console.log(isOld) // true (TS will complain, but it still works)
+```
+```js
+if (age > 30) {
+    let isOld = true
+}
+
+console.log(isOld) // Cannot find name 'isOld'
+```
+- ``let`` and ``const`` introduced the idea of "block scope"
+    - "blocks" are snippets surrounded with curly braces and variables are available inside blocks and below them
+
+#### Arrow Functions
+```js
+const add = (a:number, b:number) => {
+    return a + b;
+}
+
+console.log(add(2,5)) // 7
+```
+- One of the benefits of arrow functions is that it is shorter
+    - For a single expression return, the curly braces and return keyword can be omitted
+```js
+const add = (a:number, b:number) => a + b;
+```
+- If there is only one parameter, it doesn't need to be surrounded by parantheses
+    - This feature is supported by JS but not TS unless we add types to the function:
+```js
+const printOut: (a: number | string) => void = output => console.log(output);
+```
+
+#### Default Function Parameters
+```js
+const add = (a:number, b:number = 1) => a + b;
+
+const printOut: (a: number | string) => void = output => console.log(output);
+
+printOut(add(5)); //6
+```
+- Be is 1 by default so we can only add one parameter when we call the function
+- In a situation like this, the default parameter should be the last one
+    - If we try to call this function with only one parameter, we get an error
+
+#### The Spread Operator (...)
+```js
+const hobbies = ['Jasper', 'Watching MMA'];
+const oldHobbies = ['Gaming','Watching Baseball'];
+
+hobbies.push(...oldHobbies)
+console.log(hobbies) // [ "Jasper", "Watching MMA", "Gaming", "Watching Baseball" ]
+```
+- The spread operator takes all elements of an array
+- The spread operator also works with objects
+```js
+const person = {
+    name: 'Robin',
+    age: '36'
+}
+
+const copiedPerson = person;
+copiedPerson.name = 'Nibor'
+
+console.log(person.name, copiedPerson.name) // Nibor Nibor
+```
+- In the example above, we're not actually creating a copy, as changes to ``copiedPerson`` will also be applied to ``person``
+- Using the spread operator will create an actual copy and the orginal won't be changed:
+```js
+const copiedPerson = {...person};
+copiedPerson.name = 'Nibor'
+
+console.log(person.name, copiedPerson.name) // Robin Nibor
+```
+
+#### Rest Parameters
+- Rest Parameters help us when we want a function to take a variable amount of arguments
+```js
+const sum = (...args: number[]) => {
+    return args.reduce((r,a) => r+a)
+}
+
+const addNumbers = sum(1,2,3,4)
+console.log(addNumbers) //10
+```
+
+#### Array and Object Destructuring
+- We use destructuring to pull elements from arrays and objects
+- With arrays we use a bracket on the left side with the array we want to destructure from: ``const [] = hobbies``
+```js
+const [hobby1, hobby2, ...remaingHobbies] = hobbies
+```
+- The first two elements of hobbies will be assigned to ``hobby1`` and ``hobby2`` while the remaining hobbies will be placed in an array named ``remainingHobbies``
+- With objects, we can use destructuring to pull properties and give them variable names:
+```js
+const {firstName,age} = person;
+```
