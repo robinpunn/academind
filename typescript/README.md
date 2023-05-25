@@ -69,6 +69,15 @@
     - [Readonly Interface Properties](#readonly-interface-properties)
     - [Extending Intefaces](#extending-intefaces)
     - [Interfaces as Function Types](#interfaces-as-function-types)
+1. [Advanced Types](#advanced-types)
+    - [Intersection Types](#intersection-types)
+    - [More on Type Guards](#more-on-type-guards)
+    - [Discriminated Unions](#discriminated-unions)
+    - [Type Casting](#type-casting)
+    - [Index Properties](#index-properties)
+    - [Function Overloads](#function-overloads)
+    - [Optional Chaining](#optional-chaining)
+    - [Nullish Coalescing](#nullish-coalescing)
 ---
 
 ---
@@ -1017,7 +1026,7 @@ const [hobby1, hobby2, ...remaingHobbies] = hobbies
 ```js
 const {firstName,age} = person;
 ```
-
+---
 ### Classes and Interfaces
 #### What are Classes?
 **OOP**
@@ -1419,3 +1428,259 @@ let add: AddFn;
 
 add = (n1: number, n2: number) => n1 + n2
 ```
+---
+### Advanced Types
+#### Intersection Types
+- Intersection types allows us to combine other types
+```js
+type Admin = {
+    name: string;
+    privelages: string[]
+}
+
+type Employee = {
+    name: string;
+    startDate: Date;
+}
+
+type ElevatedEmployee = Admin & Employee;
+```
+- The result is a new object type that has both
+- It must have properties from both types:
+```js
+const e1: ElevatedEmployee = {
+    name: 'Robin',
+    privelages: ['Breaks', 'Naps', 'Buffet'],
+    startDate: new Date()
+};
+```
+- Alternatively, we could use interfaces:
+```js
+interface Admin {
+    name: string;
+    privelages: string[]
+}
+
+interface Employee {
+    name: string;
+    startDate: Date;
+}
+
+interface ElevatedEmployee extends Admin, Employee {}
+
+const e1: ElevatedEmployee = {
+    name: 'Robin',
+    privelages: ['Breaks', 'Naps', 'Buffet'],
+    startDate: new Date()
+};
+```
+- Unlike object types, union types are the shard type:
+```js
+type Combinable = string | number;
+type Numeric = number | boolean;
+
+type Universal = Combinable & Numeric; // type Universal = number
+```
+
+#### More on Type Guards
+- We may have to use extra type checks when using intersection types as TS will question whether the property exists
+```js
+function add(a: Combinable, b: Combinable) {
+    if (typeof a === 'string' || typeof b === 'string') {
+        return a.toString() + b.toString();
+    }
+    return a + b;
+}
+```
+- the ``instanceof`` type guard can be used with classes
+```js
+class Car {
+    drive() {
+        console.log('Driving...');
+    }
+}
+
+class Truck {
+    drive() {
+        console.log('Driving a truck...');
+    }
+
+    loadCargo(amount: number) {
+        console.log('Loading cargo ... ' + amount)
+    }
+}
+
+type Vehicle = Car | Truck;
+
+const v1 = new Car();
+const v2 = new Truck();
+
+function useVehicle(vehicle: Vehicle) {
+    vehicle.drive()
+    if (vehicle instanceof Truck) {
+        vehicle.loadCargo(1000)
+    }
+}
+
+useVehicle(v1); // Driving...
+useVehicle(v2); // Driving a truck... Loading Cargo ... 1000
+```
+- ``instanceof`` is a normal operator built into vanilla JS
+- Interfaces don't exist in JS and aren't compiled, so we can't use ``instanceof`` with interfaces
+
+#### Discriminated Unions
+- A discriminated union is a special type of type guard
+- It is a pattern that can be used when working with union types to make implementing type gaurds easier
+- They are available when working with object types
+```js
+interface Bird {
+    type: 'bird';
+    flyingSpeed: number;
+}
+
+interface Horse {
+    type: 'horse';
+    runningSpeed: number;
+}
+
+type Animal = Bird | Horse;
+
+function moveAnimal(animal: Animal) {
+    let speed;
+    switch (animal.type) {
+        case 'bird':
+            speed = animal.flyingSpeed;
+            break;
+        case 'horse':
+            speed = animal.runningSpeed;
+            break;
+    }
+    console.log('Moving at speed: ' + speed);
+}
+
+moveAnimal({type: 'bird', flyingSpeed: 33})
+```
+- This is a discriminated union because we have on common property in every object that makes up our union
+    - We use that property in our typecheck for extra safety
+
+#### Type Casting
+- Helps us tell TS that some value is of a specific type where TS is not able to detect it on its own
+- A good example is when accessing something in the DOM
+```html
+<p></p>
+<input type="text" id="user-input" />
+```
+```js
+const paragraph = document.querySelector('p'); // const paragraph: HTMLParagraphElement | null
+const userInput = document.getElementById('userInput') //const userInput: HTMLElement | null
+```
+- TS doesn't read our HTML code so it's only aware of 'some' html element, not a specific element
+```js
+userInput.value = 'Hi there' // Property 'value' does not exist on type 'HTMLElement'
+```
+- One way to implement type casting is with the <HTML> tag:
+```js
+const paragraph = <HTMLParagraphElement>document.querySelector('p');
+const userInput = <HTMLInputElement>document.getElementById('userInput');
+```
+- Alternatively, we can use:
+```js
+const paragraph = document.querySelector('p') as HTMLParagraphElement;
+const userInput = document.getElementById('userInput') as HTMLInputElement;
+```
+- We can also use ``!``:
+```js
+const userInput = document.getElementById('userInput')!;
+```
+- It tells TS that the expression in front of the ``!`` will never yield null
+- We can also use an if check:
+```js
+const paragraph = document.querySelector('p');
+
+if (paragraph) {
+ (paragraph as HTMLParagraphElement).innerText = 'Bungo'
+}
+```
+
+#### Index Properties
+- Index types allow us to create objects that are more flexible in relation to the properties they might hold
+- Index types are defined by ``[]``
+```js
+interface ErrorContainer {
+    [prop: string]: string;
+    [prop: number]: string
+}
+```
+- Using this syntax anove, all props have to be a string and their values have to be strings
+- We can add multiple values that follow the same type format
+```js
+const errorBag: ErrorContainer = {
+    email: 'Not a valid email',
+    userName: 'Must start with a capital character',
+    34: 'ok ok ok',
+    manor: "mungo",
+    33: 'magic number'
+}
+```
+#### Function Overloads
+- A feature that allows us to define multiple function signatures for the same function
+    - We can have multiple ways of calling a function with varying parameters
+```js
+function add(a: Combinable, b: Combinable) {
+    if (typeof a === 'string' || typeof b === 'string') {
+        return a.toString() + b.toString();
+    }
+    return a + b;
+}
+
+const result = add('Robin','Flobin') as string;
+result.split('')
+```
+- Going back to our combinable, the split will throw an error in TS unless we implement typecasting
+- Instead, we can use a function overload in this situation
+- We do this by adding another function declaration above the function:
+```js
+function add(a:number, b: number): number
+function add(a:string, b: string): string;
+function add(a: Combinable, b: Combinable) {
+    if (typeof a === 'string' || typeof b === 'string') {
+        return a.toString() + b.toString();
+    }
+    return a + b;
+}
+
+const result = add('Robin','Flobin') as string;
+result.split('')
+```
+- This syntax doesn't work in JS and will be eliminated by the TS compilation process
+
+#### Optional Chaining
+- Optional chaining is useful when we don't know with certainty whether an object property is defined
+```js
+const fetchedUserData = {
+    id: 'u1',
+    name: 'Robin',
+    job: {title: 'CEO', description: 'My own company'}
+}
+
+console.log(fetchedUserData.job.title);
+```
+- If job didn't exist above, we would do something like:
+```js
+console.log(fetchedUserData.job && fetchedUserData.job.title);
+```
+- Instead, we can use ``?`` to see if the object exits:
+```js
+fetchedUserData?.job?.title
+```
+
+#### Nullish Coalescing
+- Nullish coalescing is loosely related to optional chaining
+- It helps us deal with nullish data
+```js
+const userData = null
+
+const storedData = userInput || 'DEFAULT';
+```
+- The problem with the approach above is if userData is an empty string, it will still be passed over
+- Instead we can use the nullish coalescing operator ``??``:
