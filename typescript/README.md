@@ -43,6 +43,32 @@
     - [Code Quality Options](#code-quality-options)
     - [Useful Resources and Links](#useful-resources--links)
 1. [Next-generation JavaScript & TypeScript](#next-generation-javascript--typescript)
+    - [let and const](#let-and-const)
+    - [Arrow Functions](#arrow-functions)
+    - [Default Function Parameters](#default-function-parameters)
+    - [The Spread Operator (...)](#the-spread-operator)
+    - [Rest Parameters](#rest-parameters)
+    - [Array and Object Destructuring](#array-and-object-destructuring)
+1. [Classes and Interface](#classes-and-interfaces)
+    - [What are Classes?](#what-are-classes)
+    - [Creating a First Class](#creating-a-first-class)
+    - [Compiling to JavaScript](#compiling-to-javascript)
+    - [Constructor Functions & The "this" Keyword](#constructor-functions--the-this-keyword)
+    - ["private" and "public" Access Modifiers](#private-and-public-access-modifiers)
+    - [Shorthand Initialization](#shorthand-initialization)
+    - ['readonly' Properties](#readonly-properties)
+    - [Inheritance](#inheritance)
+    - [Overriding Properties & The "protected" Modifier](#overriding-properties--the-protected-modifier)
+    - [Getters and Setters](#getters-and-setters)
+    - [Static Methods and Properties](#static-methods-and-properties)
+    - [Abstract Classes](#abstract-classes)
+    - [Singletons and Private Constructors](#singletons-and-private-constructors)
+    - [A First Interface](#a-first-interface)
+    - [Using Interfaces with Classes](#using-interfaces-with-classes)
+    - [Why Interfaces?](#why-interfaces).
+    - [Readonly Interface Properties](#readonly-interface-properties)
+    - [Extending Intefaces](#extending-intefaces)
+    - [Interfaces as Function Types](#interfaces-as-function-types)
 ---
 
 ---
@@ -990,4 +1016,406 @@ const [hobby1, hobby2, ...remaingHobbies] = hobbies
 - With objects, we can use destructuring to pull properties and give them variable names:
 ```js
 const {firstName,age} = person;
+```
+
+### Classes and Interfaces
+#### What are Classes?
+**OOP**
+- To understand classes we need to understand object oriented programming (OOP)
+- The idea with OOP is that you work with (rea-life) Entities in you code
+    - We work with objects that resemble real life objects as far as possible to make it easier to reason our code
+    - We break our project down into logical peices such as a ProductList, Product, and ShoppingCart for an e-commerce app
+    - We can acheive this by using objects or classes
+
+**Classes and Instances**
+- **Objects** are the concrete things we work with in our code, the data structures we use to store data and methods
+    - Objects are **Instances** of classes if they are based on a class
+    - Class based creation is an alternative to using object literals
+- **Classes** are blueprints for objects
+    - classes allow use to define how objects should look like in terms of data and methods
+    - Classes make it easier to make multiple smaller objects
+
+#### Creating a First Class
+- Classes can serve as 'syntactic sugar' for constructors
+- ``constructor() {}`` is a reserved keyword which is tied to a class and any object created based on the class
+    - Exectued when the object is created... it allows us to do initialization work
+```js
+class Blockchain {
+    name: string; // this is not a key value pair
+
+    constructor(n: string) {
+        this.name = n;
+    }
+}
+```
+- Above we have a blueprint and we can create a new object based on it:
+```js
+new Blockchain('RobChain');
+```
+
+#### Compiling to JavaScript
+- Classes aren't "new" to JavaScript
+- In the past, functions were used to create classes so the example above compiled to older version of JavaScript would look like this:
+```js
+var Blockchain = /** @class */ (function () {
+    function Blockchain(n) {
+        this.name = n;
+    }
+    return Blockchain;
+}());
+var robCoin = new Blockchain('RobChain');
+console.log(robCoin);
+```
+- Modern JS introduced classes offering cleaner syntax:
+```js
+class Blockchain {
+    constructor(n) {
+        this.name = n;
+    }
+}
+const robCoin = new Blockchain('RobChain');
+console.log(robCoin);
+```
+
+#### Constructor Functions & The "this" Keyword
+- ``this`` refers to the instance of the class that was created
+- when we add a "method", we have to use the ``this`` keyword to access properties of the class:
+```js
+describe() {
+    console.log('Blockchain: ' + this.name)
+}
+robCoin.describe() // Blockchain: RobChain
+
+const robCoinCopy = {describe: robCoin.describe}
+
+robCoinCopy.describe() // Blockchain: undefined
+```
+- ``this`` has tricky behavior so we can pass it in as an argument with the class type to help in certain situations where ``this`` wouldn't be accessible
+```js
+describe(this: Blockchain) {
+    console.log('Blockchain: ' + this.name)
+}
+const robCoinCopy = {name: 'RobCoinFork', describe: robCoin.describe}
+
+robCoinCopy.describe() // RobCoinFork
+```
+
+#### "private" and "public" Access Modifiers
+```js
+class Blockchain {
+    name: string;
+    dapps: string[] = [];
+
+    constructor(n: string) {
+        this.name = n;
+    }
+
+    describe(this: Blockchain) {
+        console.log('Blockchain: ' + this.name);
+    }
+
+    addDapp(dapp: string) {
+        this.dapps.push(dapp);
+    }
+
+    printDappInfo() {
+        console.log(this.dapps.length);
+        console.log(this.dapps);
+    }
+}
+
+const robCoin = new Blockchain('RobChain');
+
+robCoin.addDapp('UniSwap');
+robCoin.addDapp('Aave');
+
+robCoin.describe();
+robCoin.printDappInfo();
+```
+- When building large apps we want avoid doing things like:
+```js
+robCoin.dapps[2] = 'Curve'
+```
+- We can use the ``private`` keyword to make things only accessible inside the class
+```js
+private dapps: string[] = [];
+```
+- We can also add ``public`` but ``public`` is the default ( it allows access outside of the class)
+- Newer versions of JS have access to ``public`` and ``private`` but in older version, everything was ``public`` by default
+
+#### Shorthand Initialization
+- Instead of initializing variables and then assigning values inside the constructor, we can use a shorthand version
+```js
+class Blockchain {
+    private dapps: string[] = [];
+
+    constructor(private consensus: string, public name: string) {}
+
+    describe(this: Blockchain) {
+        console.log(`The ${this.consensus} Blockchain ${this.name} has won the coin wars`);
+    }
+
+    addDapp(dapp: string) {
+        this.dapps.push(dapp);
+    }
+
+    printDappInfo() {
+        console.log(this.dapps.length);
+        console.log(this.dapps);
+    }
+}
+
+const robCoin = new Blockchain('PoS','RobChain');
+```
+
+#### 'readonly' Properties
+- like ``private`` and ``public``, ``readonly`` is introduced by TS, they don't exist in JS
+- ``readonly`` makes sure that you fail if you try to write to the property
+
+#### Inheritance
+- We can use inheritance to borrow properties from a main class and add extra ones
+- We can only inherit from one class and we do those by using the ``extends`` keyword with the class we want to inherit
+```js
+class Layer2 extends Blockchain {}
+```
+- The class that inherits automatically gets everything from the base class and we have to use the keyword ``super`` in the constructor
+    - ``super`` calls the constructor of the base class
+    - before anything is done with ``this``, ``super`` must be called
+```js
+class Layer2 extends Blockchain {
+    constructor (consensus: string, public memeCoins: string[]) {
+        super(consensus, 'ScamChain')
+    }
+}
+```
+
+#### Overriding Properties & The "protected" Modifier
+- We can override methods or properties of our base class
+- ``private`` properties or only accessible inside the class that they're define
+- ``protected`` is similar to private but it is also available to any class that extends the base class
+
+#### Getters and Setters
+- A ``getter`` is a property where you execute a function or a method when you retrieve a value which allows a developer to add more complex logic
+- We use the ``get`` keyword to create a getter:
+```js
+private lastGas: number;
+
+get mostRecentGas() {
+    if (this.lastGas) {
+        return this.lastGas
+    }
+    throw new Error('whaddamigonnado?')
+}
+
+console.log(nibCoin.mostRecentGas)
+```
+- When calling the getter, we just access it without using parentheses
+- We can use the ``set`` keyword to set a value
+```js
+    get getMostRecentGas() {
+        if (this.lastGas) {
+           return `The last gas was ${this.lastGas} gas molecules`
+        }
+        else {throw new Error('whaddamigonnado?')}
+    }
+
+    set setMostRecentGas(amount: number) {
+        this.removeGasFees(amount)
+    }
+
+    nibCoin.setMostRecentGas = 13
+    console.log(nibCoin.getMostRecentGas)
+```
+- Like the ``getter``, the ``setter`` is referenced and not actually called.
+    - Under the hood, the ``getter`` and ``setter` are executed by the class after being referenced
+
+#### Static Methods and Properties
+- ``static`` methods and properties allow us to add properties and methods to classes which are not accessed on an instance of the class
+    - You don't have to use the ``new`` keyword
+    - Often used for utility functions that you want to group or map
+- An example is the ``Math`` class globally available in JS
+    - We can use methods such as ``Math.PI`` or ``Math.pow()`` and don't have to create a ``new Math`` instance
+- ``static`` methods exist so you don't have to instantiate a new object just to call a method
+```js
+static createSideChain(name: string) {
+        return name;
+    }
+```
+- ``this`` won't be able to point to ``static`` methods
+
+#### Abstract Classes
+- An abstract class is a class that cannot be instantiated directly and is designed to serve as a base class for other classes.
+    - It can define abstract methods, which are methods without an implementation, and it can also provide concrete implementations for other methods.
+- To define an abstract class in TypeScript, you use the abstract keyword before the class declaration
+```js
+abstract class AbstractClass {
+  abstract abstractMethod(): void;
+
+  concreteMethod(): void {
+    console.log("Concrete method implementation");
+  }
+}
+
+class Subclass extends AbstractClass {
+  abstractMethod(): void {
+    console.log("Implemented abstract method");
+  }
+}
+```
+- Abstracted classes can't be instantiated themselves, they exist just to be inherited from
+
+#### Singletons and Private Constructors
+- Useful in situations where you can't or don't want to use static methods and properties
+- Adding the ``private`` keyword ensures it is only accessible by the class
+- A singleton is a design pattern that ensures a class has only one instance, and provides a global point of access to that instance.
+    - In TypeScript, you can implement a singleton using a combination of a private constructor and a static method to access the instance.
+- In TypeScript, you can mark a constructor as private to prevent the class from being instantiated directly.
+    - This is useful when you want to limit the creation of instances to specific methods or within the class itself.
+
+#### A First Interface
+- An interface describes the structure of an object
+- An interface is created with the ``interface`` keyword which only exists in TS, not in vanilla JS
+- An interface property can't have an initializer
+```js
+interface Blockchain {
+    name: string;
+    confirmation: string;
+    nonce: number;
+    block: number;
+    nfts: string[]
+
+    mine(): void;
+    getDistributedAmount(): void;
+    createNFT(create: string): string;
+    seeNFTs(): void
+}
+
+let firstChain: Blockchain;
+
+firstChain = {
+    name: 'RobChain',
+    confirmation: 'PoW',
+    nonce: 0,
+    block:0,
+    nfts: [],
+    mine() {
+        this.nonce ++
+        this.block += 10
+    },
+    getDistributedAmount() {
+        console.log(this.nonce * this.block)
+    },
+    createNFT(create:string) {
+        this.nfts.push(create)
+        return `you created a ${create}!`
+    },
+    seeNFTs() {
+        console.log(this.nfts)
+    }
+}
+```
+
+#### Using Interfaces with Classes
+- Interfaces are simalar to creating a type, but Interfaces makes it clear that we are creating an object
+- Interfaces can be implemented in a class
+    - The reason we often work interfaces is because they can be used as a contract a class can implement and adhere to
+```js
+interface Mineable {
+    block: number;
+    nonce: number;
+
+    mine(): void;
+    getDistributedAmount(): void;
+}
+
+interface NFT {
+    nfts: string[];
+
+    createNFT(create: string): string;
+    seeNFTs(): void
+}
+
+class Blockchain implements Mineable, NFT {
+    name: string;
+    block: number;
+    nonce: number;
+    nfts: string[] = [];
+
+    constructor(_name: string, _block: number, _nonce:number) {
+        this.name = _name
+        this.block = _block
+        this.nonce = _nonce
+    }
+
+    mine () {
+        this.block += 5
+        this.nonce ++
+    }
+
+    getDistributedAmount(): void {
+        console.log(this.block*this.nonce)
+    }
+
+    createNFT(create: string): string {
+        this.nfts.push(create)
+        return `you created a ${create}`
+    }
+
+    seeNFTs(): void {
+        console.log(this.nfts)
+    }
+}
+```
+- Anything that interfaces with ``Mineable`` has to have the same properties
+- We can use the ``implement`` keyword to interface and we can interface multiple times
+- We can add new properties to our class, but we must have the same properties as the interface as well
+
+#### Why Interfaces?
+- Interfaces are used to share functionality amongst classes
+    - Interfaces enable polymorphism, which means that you can use objects of different classes that implement the same interface interchangeably.
+- Interfaces provide a clear structure and separation of concerns.
+- Interfaces serve as documentation for your code, describing the expected structure and behavior of objects.
+- Interfaces allow you to verify if a class adheres to a specific contract.
+- Interfaces provide a foundation for extending functionality.
+
+#### Readonly Interface Properties
+- ``private`` and ``public`` are not available for interfaces but ``readonly`` is available
+- setting ``readonly`` makes it clear that the property must only be set once and then is readonly thereafter
+    - We use it for values we want to stay constant
+
+#### Extending Intefaces
+```js
+interface Named {
+    readonly name: string
+}
+
+interface Greetable extends Named {
+    greet(phrase: string): void
+}
+
+class Person implements Greetable {
+    name: string;
+    age: number;
+
+    constructor(_name: string, _age: number) {
+        this.name = _name;
+        this.age = _age
+    }
+
+    greet(phrase: string) {
+        console.log(`My name is ${this.name}, ${phrase}`)
+    }
+}
+```
+- We can use the ``extends`` keyword to combine interfaces
+
+#### Interfaces as Function Types
+```js
+interface AddFn {
+    (a:number, b: number): number;
+}
+
+let add: AddFn;
+
+add = (n1: number, n2: number) => n1 + n2
 ```
