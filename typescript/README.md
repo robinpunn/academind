@@ -78,6 +78,14 @@
     - [Function Overloads](#function-overloads)
     - [Optional Chaining](#optional-chaining)
     - [Nullish Coalescing](#nullish-coalescing)
+1. [Generics](#generics)
+    - [Built-in-Generics & What are Generics?](#built-in-generics--what-are-generics)
+    - [Creating a Generic Function](#creating-a-generic-function)
+    - [Another Generic Function](#another-generic-function)
+    - [The "keyof" Constraint](#the-keyof-constraint)
+    - [Generic Classes](#generic-classes)
+    - [Generic Utiltity Types](#generic-utiltity-types)
+    - [Generic Types vs Union Types](#generic-types-vs-union-types)
 ---
 
 ---
@@ -1684,3 +1692,213 @@ const storedData = userInput || 'DEFAULT';
 ```
 - The problem with the approach above is if userData is an empty string, it will still be passed over
 - Instead we can use the nullish coalescing operator ``??``:
+
+---
+### Generics
+#### Built-in-Generics & What are Generics?
+- If we try to create an empty array with the array type:
+```js
+const names: Array = []
+```
+- We get the following error from TS:
+```bash
+Generic type 'Array<T>' requires 1 type argument(s)
+```
+- ``Array<T>`` syntax indicates that we're dealing with a generic type
+- A generic type is a type that's somewhat connected to another type and is flexible on what the other type can be
+- Along with arrays, another generic type is the [promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) type
+```js
+// const promise: Promise<unknown>
+const promise = new Promise((resolve,reject) => {
+    setTimeout(() => {
+        resolve('This is done')
+    }, 2000)
+})
+```
+- TS doesn't know they type because it doesn't know how the promise will resolve, so we can give it a type
+```js
+const promise: Promise<string> = new Promise((resolve,reject) => {
+    setTimeout(() => {
+        resolve('This is done')
+    }, 2000)
+})
+```
+```js
+const promise: Promise<number> = new Promise((resolve,reject) => {
+    setTimeout(() => {
+        resolve(10)
+    }, 2000)
+});
+
+promise.then(data => {
+    data.split(' ')
+})
+```
+- In the example above, TS will throw an error on the split method since it can't be used with numbers
+- Generics help us get additional type information
+
+#### Creating a Generic Function
+- In the example below, can't access the property on the merged object:
+```js
+function merge (objA: object, objB: object) {
+    return Object.assign(objA, objB)
+}
+
+const mergedObj = merge({name:'Mayhem'}, {age: 17})
+mergedObj.name
+```
+- Because we merged the objects in the function, TS doesn't know
+- One solution would be type casting:
+```js
+const mergedObj = merge({name:'Mayhem'}, {age: 17}) as {name: string, age: number}
+```
+- Instead we can use generics:
+```js
+function merge<T,U>(objA: T, objB: U) {
+    return {...objA, ...objB}
+}
+
+const mergedObj = merge({name:'Mayhem'}, {age: 16})
+mergedObj.name
+```
+- OR
+- an example of **contraints**... older versions of TS didn't require this syntax but now it is required.
+```js
+function merge<T extends object, U extends object> (objA: T, objB: U) {
+    return Object.assign(objA, objB)
+}
+
+const mergedObj = merge({name:'Mayhem'}, {age: 16})
+mergedObj.name
+```
+- We can also set the types on the function call:
+```js
+const mergedObj3 = merge<object, object>({name:'Jasper'},{age:0.5})
+```
+OR more specifically:
+```js
+const mergedObj4 = merge<{name:string, hobbies: string[]}, {age:number}>({name: 'Mayhem', hobbies: ['Sleep', 'Rest']}, {age:16})
+```
+- The above examples are redundant and not necessary, but they are examples of what generics are all about
+
+#### Another Generic Function
+```js
+interface Lengthy {
+    length: number
+}
+function countAndPrint<T extends Lengthy>(element: T) {
+    let description = 'Got no value.';
+    if (element.length > 0) {
+        description =  'Got ' + element.length + ' elements.'
+    }
+    return [element, description];
+}
+```
+- The idea is we're being a little unspecific about our data
+
+#### The "keyof" Constraint
+```js
+function extractAndConvert(obj: object, key: string) {
+    return obj[key]
+}
+```
+- TS will throw an error
+- We can instead use the keyof
+```js
+function extractAndConvert<T extends object, U extends keyof T>(obj: T, key: U) {
+    return obj[key]
+}
+```
+
+#### Generic Classes
+- Along with generic functions we can create generic classes
+```js
+class DataStorage<T> {
+    private data: T[] = [];
+
+    addItem(item: T) {
+        this.data.push(item)
+    }
+
+    removeItem(item: T) {
+        this.data.splice(this.data.indexOf(item), 1)
+    }
+
+    getItems() {
+        return [...this.data]
+    }
+}
+
+const textStorage = new DataStorage<string>()
+textStorage.addItem('Mayhem')
+
+const numberStorage = new DataStorage<number>()
+numberStorage.addItem(17)
+```
+- Generics allow us to be flexible but with strong type support
+- With objects, it doesn't work as inteded:
+```js
+const objectStorage = new DataStorage<object>()
+objectStorage.addItem({name: 'Mayhem'})
+objectStorage.addItem({name: 'Japser'})
+objectStorage.addItem({name: 'Nala'})
+objectStorage.removeItem({name: 'Nala'})
+console.log(objectStorage.getItems()) // [{ name: "Mayhem" }, {name: "Japser" }]
+objectStorage.removeItem({name: 'Jasper'})
+console.log(objectStorage.getItems()) // [{ name: "Mayhem" }, {name: "Japser" }]
+```
+- This behavior is due to pass by reference
+- One solution would be to store the object in a variable:
+```js
+const jasperObject = {name:'Jasper'}
+objectStorage.addItem(jasperObject)
+objectStorage.removeItem(jasperObject)
+```
+- It would be a better idea to create a storage for objects rather than use the current DataStorage class and keep this storage for primitives:
+```js
+class DataStorage<T extends string | number | boolean > {...}
+```
+- Generics give us flexibility combined with type safety
+
+#### Generic Utiltity Types
+- There are built in types that are generic types that give certain utility functionality
+```js
+interface CourseGoal {
+    title: string;
+    description: string;
+    completeUntil: Date;
+}
+
+function createCourseGoal(title: string, description: string, date: Date): CourseGoal {
+    return {title:title, description: description, completeUntil:date}
+}
+```
+- The above example would be valid, but we may have situations where we don't return data in that sequence
+- We can use the Partial:
+```js
+interface CourseGoal {
+    title: string;
+    description: string;
+    completeUntil: Date;
+}
+
+function createCourseGoal(title: string, description: string, date: Date): CourseGoal {
+    let courseGoal: Partial<CourseGoal> = {}
+    courseGoal.title = title
+    courseGoal.description = description
+    courseGoal.completeUntil = date
+    return courseGoal as CourseGoal
+}
+```
+- We can use readonly to limit the size of an array
+```js
+const pooches: Readonly<string[]> = ['Mayhem', 'Jasper']
+pooches.push('Robin') // Property 'push' does not exist on type 'readonly string[]'
+pooches.pop() // Property 'pop' does not exist on type 'readonly string[]'
+```
+- Partials can give us more flexibility and extra precision
+
+#### Generic Types vs Union Types
+- Union types are great when you want to be flexible with your types
+- Generic types are great when you want to lock in a certain type
+- Generics: https://www.typescriptlang.org/docs/handbook/generics.html
