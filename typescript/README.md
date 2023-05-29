@@ -1902,3 +1902,288 @@ pooches.pop() // Property 'pop' does not exist on type 'readonly string[]'
 - Union types are great when you want to be flexible with your types
 - Generic types are great when you want to lock in a certain type
 - Generics: https://www.typescriptlang.org/docs/handbook/generics.html
+
+---
+### Decorators
+- Decorators are a feature useful for meta programming
+    - Writing code which is easier to use for other developers
+
+#### A First Class Decorator
+- First we enable experimental mode in ``tsconfig.json``
+```json
+"experimentalDecorators": true,                      /* Enable experimental support for legacy experimental decorators. */
+```
+- A decorator is a function that we apply to something (like a class) in a certain way
+- This would be a standard way to create a class:
+```js
+class Dog {
+    name = 'Jasper';
+
+    constructor() {
+        console.log('Creating dog object...');
+    }
+}
+
+const dog = new Dog();
+
+console.log(dog)
+```
+- We can add decorators but this would not work as is because decorators receive arguments:
+```js
+function Logger() {
+    console.log('Logging...')
+}
+
+@Logger
+class Dog {
+    name = 'Jasper';
+
+    constructor() {
+        console.log('Creating dog object...');
+    }
+}
+```
+- The amount of arguments for the decorator depends on where the decorator is used
+```js
+function Logger(constructor: Function) {
+    console.log('Logging...');
+    console.log(constructor); // class Dog {}
+}
+
+@Logger
+class Dog {
+    name = 'Jasper';
+
+    constructor() {
+        console.log('Creating dog object...');
+    }
+}
+
+const dog = new Dog();
+
+console.log(dog) // Object {name: 'Jasper'}
+```
+- Decorators execute when your class is defined, not when it's instantiated
+    - The decorator runs when JS find your class definition
+
+#### Working with Decorator Factories
+- A decorator factory returns a decorator function but allows us to configure it when we assign it as a decorator
+```js
+function Logger(logString: string) {
+    return function(constructor: Function) {
+        console.log('Logging...');
+        console.log(constructor);
+    }
+}
+
+@Logger ('LOGGING - DOG')
+class Dog {
+    name = 'Jasper';
+
+    constructor() {
+        console.log('Creating dog object...');
+    }
+}
+```
+
+#### Building more Useful Decorators
+```js
+function WithTemplate(template: string, hookId: string) {
+    return function(_: Function){
+        const hookEl = document.getElementById(hookId);
+        if (hookEl) {
+            hookEl.innerHTML = template;
+        }
+    }
+}
+```
+- The ``_`` lets TS know we are aware of the argument, but we don't need it
+- We can use the decorator above to create dynamic content:
+```js
+@WithTemplate('<h1>My Dog Object</h1>', 'app')
+class Dog {
+    name = 'Jasper';
+
+    constructor() {
+        console.log('Creating dog object...');
+    }
+}
+```
+- We can create extra utilities that can be used ambiguously
+
+#### Adding Multiple Decorators
+- We can add more than one decorators to classes or anywhere else we can use a decorator
+- Decorators render bottom up, but the creation of the factories occurs in the order they were written
+    - The execution of the actual decorators happens bottom up
+```js
+// A first class decorator
+function Logger(logString: string) {
+    console.log('Logger factory');
+    return function(constructor: Function) {
+        console.log(logString);
+        console.log(constructor);
+    }
+}
+
+// building more useful decorators
+function WithTemplate(template: string, hookId: string) {
+    console.log('Template factory');
+    return function(constructor: any){
+        console.log('rendering template')
+        const hookEl = document.getElementById(hookId);
+        const p = new constructor();
+        if (hookEl) {
+            hookEl.innerHTML = template;
+            hookEl.querySelector('h1')!.textContent = p.name;
+        }
+    }
+}
+
+// @Logger ('LOGGING - DOG')
+@Logger('Logging')
+@WithTemplate('<h1>My Dog Object</h1>', 'app')
+class Dog {
+    name = 'Jasper';
+
+    constructor() {
+        console.log('Creating dog object...');
+    }
+}
+
+const dog = new Dog();
+
+console.log(dog)
+```
+- The code above would execute in this order:
+```bash
+Logger factory
+Template factory
+rendering template
+Creating dog object...
+Logging
+class Dog {}
+Creating dog object...
+Object { name: "Jasper" }
+```
+
+#### Diving into Property Decorators
+- The arguments a decorator gets depends on where you add it
+```js
+function Log(target: any, propertyName: string | Symbol) {
+    console.log('Property decorator');
+    console.log(target,propertyName);
+}
+
+class Product {
+    @Log
+    title: string;
+    private _price: number;
+
+    set price(val: number) {
+        if (val > 0) {
+            this._price = val
+        } else {
+            throw new Error('uh oh hotdot!')
+        }
+    }
+
+    constructor(t: string, p:number) {
+        this.title = t;
+        this._price = p;
+    }
+
+    getPriceWithTax(tax: number) {
+        return this._price * (1 + tax)
+    }
+}
+```
+- This executes when the class definition is registered by JS
+
+#### Accessor & Parameter Decorators
+- We can also add decorators to accessors (getters and setters) and it receives three arguments
+- ``PropertyDescriptor`` is a type built into JS
+```js
+function Log2(target: any, name: string, descriptor: PropertyDescriptor) {
+    console.log('Accessor decorator')
+    console.log(target)
+    console.log(name)
+    console.log(descriptor)
+}
+
+class Product {
+    // ...code
+    @Log2
+    set price(val: number) {
+        if (val > 0) {
+            this._price = val
+        } else {
+            throw new Error('uh oh hotdot!')
+        }
+    }
+    // ...code
+}
+```
+- Method decorators also receive three arguments
+```js
+function Log3(target: any, name: string | Symbol, descriptor: PropertyDescriptor) {
+    console.log('Method decorator')
+    console.log(target)
+    console.log(name)
+    console.log(descriptor)
+}
+```
+- We can also add decorators to parameters:
+```js
+getPriceWithTax(@Log4 tax: number) {...}
+```
+- The decorator takes three arguments as well, taking the name of the method its attached to and the index of its position
+```js
+function Log4(target: any, name: string | Symbol, position: number) {
+    console.log('Parameter decorator')
+    console.log(target)
+    console.log(name)
+    console.log(position)
+}
+```
+
+#### When Do Decorators Execute
+- The instantiation of classes doesn't matter for decorators
+    - Decorators execute when the class is defined
+- Decorators don't execute at run time when a method is called
+    - Instead decorators allows behind the scenes set up work when a class is defined
+- Decorators add extra functionality behind the scenes
+
+#### Returning (and changing) a Class in a Class Decorator
+- In order to do more advanced things with decorators it is important to understand that some decorators, like class and method decorators, are capable of returning something
+- Syntactic sugar for a constructor functoin which is based on the original constructor:
+```js
+return class extends constructor {}
+```
+- This allows us to keep the properties of the original class
+```js
+function WithTemplate(template: string, hookId: string) {
+    console.log('Template Factory');
+    return function<T extends {new(...args: any[]): {name:string}}>(originalConstructor: T){
+        // returning and changing a class in a class decorator
+        return class extends originalConstructor {
+            constructor(...args: any[]) {
+                super();
+                console.log('rendering template')
+                const hookEl = document.getElementById(hookId);
+                const p = new originalConstructor();
+                if (hookEl) {
+                    hookEl.innerHTML = template;
+                    hookEl.querySelector('h1')!.textContent = this.name;
+                }
+            }
+        }
+    }
+}
+```
+- We're creating a class with a constructor function where the logic will be rendered to the DOM only when the object is instantiated
+
+#### Other Decorator Return Types
+- Decorators that allows return are the decorators that ared added to methods and accessors
+- Decorators on properties and parameters *can* return, but TS ignores it
+    - Return values aren't supported, so they're not used here
+- [Property Descriptors](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty) exist in JS and they allow us to define a property in more detail
