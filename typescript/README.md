@@ -86,6 +86,18 @@
     - [Generic Classes](#generic-classes)
     - [Generic Utiltity Types](#generic-utiltity-types)
     - [Generic Types vs Union Types](#generic-types-vs-union-types)
+1. [Decorators](#decorators)
+    - [A First Class Decorator](#a-first-class-decorator)
+    - [Working with Decorator Factories](#working-with-decorator-factories)
+    - [Building more Useful Decorators](#building-more-useful-decorators)
+    - [Adding Multiple Decorators](#adding-multiple-decorators)
+    - [Diving into Property Decorators](#diving-into-property-decorators)
+    - [Accessor & Parameter Decorators](#accessor--parameter-decorators)
+    - [When Do Decorators Execute](#when-do-decorators-execute)
+    - [Returning (and changing) a Class in a Class Decorator](#returning-and-changing-a-class-in-a-class-decorator)
+    - [Other Decorator Return Types](#other-decorator-return-types)
+    - [Wrap up](#wrap-up)
+
 ---
 
 ---
@@ -2187,3 +2199,10 @@ function WithTemplate(template: string, hookId: string) {
 - Decorators on properties and parameters *can* return, but TS ignores it
     - Return values aren't supported, so they're not used here
 - [Property Descriptors](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty) exist in JS and they allow us to define a property in more detail
+
+#### Wrap up
+- There is a rich ecosystem of packages and frameworks that rely on decorators
+    - [ts class validator](https://github.com/typestack/class-validator)
+        - can be added to any project to add validation decorators which can be customized
+    - [Angular](https://angular.io/docs) is a framework that heavily relies on docs
+    - [Nest.js](https://docs.nestjs.com/) is servrside JS framework for node.js which heavily utilizes TS and decorators

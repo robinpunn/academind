@@ -126,13 +126,47 @@ __decorate([
 const p = new Printer();
 const button = document.querySelector('button');
 button.addEventListener('click', p.showMessage);
-// validation with decorators
+const registeredValidators = {};
+function Required(target, propName) {
+    var _a, _b;
+    registeredValidators[target.constructor.name] = Object.assign(Object.assign({}, registeredValidators[target.constructor.name]), { [propName]: [...((_b = (_a = registeredValidators[target.constructor.name]) === null || _a === void 0 ? void 0 : _a[propName]) !== null && _b !== void 0 ? _b : []), 'required'] });
+}
+function PositiveNumber(target, propName) {
+    var _a, _b;
+    registeredValidators[target.constructor.name] = Object.assign(Object.assign({}, registeredValidators[target.constructor.name]), { [propName]: [...((_b = (_a = registeredValidators[target.constructor.name]) === null || _a === void 0 ? void 0 : _a[propName]) !== null && _b !== void 0 ? _b : []), 'positive'] });
+}
+function validate(obj) {
+    const objValidatorConfig = registeredValidators[obj.constructor.name];
+    if (!objValidatorConfig) {
+        return true;
+    }
+    let isValid = true;
+    for (const prop in objValidatorConfig) {
+        for (const validator of objValidatorConfig[prop]) {
+            switch (validator) {
+                case 'required':
+                    isValid = isValid && !!obj[prop];
+                    break;
+                case 'positive':
+                    isValid = isValid && obj[prop] > 0;
+                    break;
+            }
+        }
+    }
+    return isValid;
+}
 class Course {
     constructor(t, p) {
         this.title = t;
         this.price = p;
     }
 }
+__decorate([
+    Required
+], Course.prototype, "title", void 0);
+__decorate([
+    PositiveNumber
+], Course.prototype, "price", void 0);
 const courseForm = document.querySelector('form');
 courseForm.addEventListener('submit', event => {
     event.preventDefault();
@@ -141,5 +175,63 @@ courseForm.addEventListener('submit', event => {
     const title = titleEl.value;
     const price = +priceEl.value;
     const createdCourse = new Course(title, price);
+    if (!validate(createdCourse)) {
+        alert('Invalid Input, please try again');
+        return;
+    }
     console.log(createdCourse);
 });
+// interface ValidatorConfig {
+//     [property: string]: {
+//         [validatableProp: string] : string[]
+//     }
+// }
+// const registeredValidators: ValidatorConfig = {}
+// function Required(target: any, propName: string) {
+//     registeredValidators[target.constructor.name] = {
+//         [propName]: ['required']
+//     }
+// }
+// function PositiveNumber(target: any, propName: string) {
+//     registeredValidators[target.constructor.name] = {
+//         [propName]: ['positive']
+//     }
+// }
+// function validate(obj: object) {
+//     const objValidatorsConfig = registeredValidators[obj.constructor.name];
+//     if (!objValidatorsConfig) {
+//         return true;
+//     }
+//     for (const prop in objValidatorsConfig) {
+//         for (const validator of objValidatorsConfig[prop]) {
+//             switch (validator) {
+//                 case 'required':
+//                     return obj[prop]
+//             }
+//         }
+//     }
+// }
+// class Course {
+//     @Required
+//     title: string;
+//     @PositiveNumber
+//     price: number;
+//     constructor(t:string, p:number) {
+//         this.title = t;
+//         this.price = p;
+//     }
+// }
+// const courseForm = document.querySelector('form') as HTMLElement
+// courseForm.addEventListener('submit', event => {
+//     event.preventDefault();
+//     const titleEl = document.getElementById('title') as HTMLInputElement
+//     const priceEl = document.getElementById('price') as HTMLInputElement
+//     const title = titleEl.value;
+//     const price = +priceEl.value;
+//     const createdCourse = new Course(title,price)
+//     if (!validate(createdCourse)) {
+//         alert('Invalid input');
+//         return
+//     }
+//     console.log(createdCourse)
+// })
