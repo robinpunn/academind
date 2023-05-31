@@ -2206,3 +2206,107 @@ function WithTemplate(template: string, hookId: string) {
         - can be added to any project to add validation decorators which can be customized
     - [Angular](https://angular.io/docs) is a framework that heavily relies on docs
     - [Nest.js](https://docs.nestjs.com/) is servrside JS framework for node.js which heavily utilizes TS and decorators
+
+---
+### Practice Time: Let's Build a Drag & Drop Project
+#### Getting Started
+- This will be an app that manages projects
+- For now, all of the files will be in one ``app.ts`` file
+    - We will break it down in the following module
+
+#### DOM Element Selection & OOP Rendering
+- Using object oriented programming, we can get access to HTML elements:
+```js
+class ProjectInput {
+    templateElement: HTMLTemplateElement;
+    hostElement: HTMLDivElement;
+
+    constructor() {
+        this.templateElement = document.getElementById('project-input') as HTMLTemplateElement;
+        this.hostElement = document.getElementById('app') as HTMLDivElement;
+    }
+}
+```
+- This code imports the content of a template element and creates a copy of it, including all its child nodes.
+- The importNode constant holds the copy, which can then be manipulated or inserted into the DOM as needed:
+```js
+const importNode = document.importNode(this.templateElement.content, true)
+```
+- The element variable represents a copy of the content from a ``<template>`` element, and the attach method attaches that element as the first child of another specified element in the DOM.
+```js
+class ProjectInput {
+    //...
+    element: HTMLFormElement;
+
+    constructor() {
+        //...
+        this.element = importNode.firstElementChild as HTMLFormElement;
+        this.attach();
+    }
+
+    private attach() {
+        this.hostElement.insertAdjacentElement('afterbegin', this.element);
+    }
+}
+```
+
+#### Interacting with DOM Elements
+- We can apply and id and the corresponding css:
+```js
+this.element.id = 'user-input';
+```
+- We add new elements and populate them in the constructor:
+```js
+class ProjectInput {
+    //..
+    titleInputElement: HTMLInputElement;
+    descriptionInputElement: HTMLInputElement;
+    peopleInputElement: HTMLInputElement;
+
+    constructor() {
+        //..
+
+        this.configure();
+        //..
+    }
+
+    private submitHandler(event: Event) {
+        event.preventDefault();
+        console.log(this.titleInputElement.value);
+    }
+
+    private configure() {
+        this.element.addEventListener('submit', this.submitHandler.bind(this))
+    }
+
+    //..
+
+}
+```
+- Keeping the setup in the contructor, we add the private methods to handle the insertion/fine tuning
+    - Private methods can only be accessed from inside of the class
+
+#### Creating & Using an "Autobind" Decorator
+- rather than using ``.bind(this)``, we can use an autobind decorator
+```js
+function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+    const adjustedDescriptor: PropertyDescriptor = {
+        configurable: true,
+        get() {
+            const boundFn = originalMethod.bind(this);
+            return boundFn;
+        }
+    };
+    return adjustedDescriptor;
+}
+
+//..
+    @autobind
+    private submitHandler(event: Event) {
+        event.preventDefault();
+        console.log(this.titleInputElement.value);
+    }
+//..
+```
+- We us the ``_`` to let TS know that we're not using those arguments
