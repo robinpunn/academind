@@ -97,7 +97,24 @@
     - [Returning (and changing) a Class in a Class Decorator](#returning-and-changing-a-class-in-a-class-decorator)
     - [Other Decorator Return Types](#other-decorator-return-types)
     - [Wrap up](#wrap-up)
-
+1. [Practice Time: Let's Build a Drag & Drop Project](#practice-time-lets-build-a-drag--drop-project)
+    - [Getting Started](#getting-started-1)
+    - [DOM Element Selection & OOP Rendering](#dom-element-selection--oop-rendering)
+    - [Interacting with DOM Elements](#interacting-with-dom-elements)
+    - [Creating & Using an "Autobind" Decorator](#creating--using-an-autobind-decorator)
+    - [Fetching User Input](#fetching-user-input)
+    - [Creating a Re-usable Validation Functionality](#creating-a-re-usable-validation-functionality)
+    - [Rendering Project Lists](#rendering-project-lists)
+    - [Managing Application State with Singletons](#managing-application-state-with-singletons)
+    - [More Classes & Custom Types](#more-classes--custom-types)
+    - [Filtering Projects with Enums](#filtering-projects-with-enums)
+    - [Adding Inheritance and Generics](#adding-inheritance-and-generics)
+    - [Rendering Project Items with a Class](#rendering-project-items-with-a-class)
+    - [Using a Getter](#using-a-getter)
+    - [Utliziing Interfaces to Implement Drag and Drop](#utliziing-interfaces-to-implement-drag-and-drop)
+    - [Drag Events and Reflecting the Current State in the UI](#drag-events-and-reflecting-the-current-state-in-the-ui)
+    - [Adding a Droppable Area](#adding-a-droppable-area)
+    - [Finishing Drag and Drop](#finishing-drag-and-drop)
 ---
 
 ---
@@ -2209,6 +2226,7 @@ function WithTemplate(template: string, hookId: string) {
 
 ---
 ### Practice Time: Let's Build a Drag & Drop Project
+[Drag and Drop MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
 #### Getting Started
 - This will be an app that manages projects
 - For now, all of the files will be in one ``app.ts`` file
@@ -2310,3 +2328,506 @@ function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
 //..
 ```
 - We us the ``_`` to let TS know that we're not using those arguments
+
+#### Fetching User Input
+```js
+//..
+    private gatherUserInput(): [string,string,number] | void {
+        const enteredTitle = this.titleInputElement.value;
+        const enteredDescription = this.descriptionInputElement.value;
+        const enteredPeople = this.peopleInputElement.value;
+
+        if (
+            enteredTitle.trim().length === 0 ||
+            enteredDescription.trim().length === 0 ||
+            enteredPeople.trim().length === 0
+        ) {
+            alert('Invalid input');
+            return;
+        } else {
+            return [enteredTitle, enteredDescription, +enteredPeople]
+        }
+    }
+
+    private clearInput() {
+        this.titleInputElement.value = '';
+        this.descriptionInputElement.value = '';
+        this.peopleInputElement.value = '';
+    }
+
+    @autobind
+    private submitHandler(event: Event) {
+        event.preventDefault();
+        const userInput = this.gatherUserInput();
+        if (Array.isArray(userInput)) {
+            const [title, desc, people] = userInput;
+            console.log(title,desc,people)
+        }
+        this.clearInput();
+    }
+//..
+```
+- The current method of validating information does not scale well
+
+#### Creating a Re-usable Validation Functionality
+- Our goal is to create a validate function that we can plug in where needed:
+```js
+   if (
+            validate({value: enteredTitle, required: true, minLength: 5}) &&
+            validate({value: enteredDescription, required: true, minLength: 5}) &&
+            validate({value: enteredPeople, required: true, minLength: 5})
+        ) {
+            alert('Invalid input');
+            return;
+        } else {
+            return [enteredTitle, enteredDescription, +enteredPeople]
+        }
+```
+- We can start by creating an Interface:
+```js
+interface Validatable {
+    value: string | number;
+    required?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    min?: number;
+    max?: number;
+}
+```
+- The question mark allows for optional parameters
+- Alternative to the ``?``, we can use undefined:
+```js
+required: boolean | undefined;
+```
+- Using ``!= null`` also checks for undefined
+```js
+function validate(validatableInput: Validatable) {
+    let isValid = true;
+    if (validatableInput.required) {
+        isValid = isValid && validatableInput.value.toString().trim().length !== 0;
+    }
+    if (validatableInput.minLength != null && typeof validatableInput.value === 'string') {
+        isValid = isValid && validatableInput.value.length >= validatableInput.minLength;
+    }
+    if (validatableInput.maxLength != null && typeof validatableInput.value === 'string') {
+        isValid = isValid && validatableInput.value.length <= validatableInput.maxLength;
+    }
+    if (validatableInput.min != null && typeof validatableInput.value ==='number') {
+        isValid = isValid && validatableInput.value >= validatableInput.min;
+    }
+    if (validatableInput.max != null && typeof validatableInput.value ==='number') {
+        isValid = isValid && validatableInput.value <= validatableInput.max;
+    }
+    return isValid;
+}
+```
+
+#### Rendering Project Lists
+- At the moment we're just console.logging: ``console.log(title,desc,people)``, but our goal is the render this information
+- We create a class responsible for rendering a list of projects
+    - It can be split into two classes:
+        1. a class for the list
+        1. a class for project items in the list
+```js
+class ProjectList {
+    templateElement: HTMLTemplateElement;
+    hostElement: HTMLDivElement;
+    element: HTMLElement;
+
+    constructor(private type: 'active' | 'finished') {
+        this.templateElement = document.getElementById('project-list') as HTMLTemplateElement;
+        this.hostElement = document.getElementById('app') as HTMLDivElement;
+
+        const importNode = document.importNode(this.templateElement.content, true);
+        this.element = importNode.firstElementChild as HTMLElement;
+        this.element.id = `${this.type}-projects`;
+        this.attach();
+        this.renderContent();
+    }
+
+    private renderContent() {
+        const listId = `${this.type}-project-list`;
+        this.element.querySelector('ul')!.id = listId;
+        this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
+    }
+
+    private attach() {
+        this.hostElement.insertAdjacentElement('beforeend', this.element);
+    }
+}
+```
+
+#### Managing Application State with Singletons
+- We can build a class that manages the state of our application
+- It will use listeners to listen for changes
+```js
+class ProjectState {
+    private projects: any[] = [];
+
+    addProject(title: string, description:string, numOfPeople: number) {
+        const newProject = {
+            id: Math.random.toString(),
+            title: title,
+            description: description,
+            people: numOfPeople
+        };
+        this.projects.push(newProject);
+    }
+}
+
+const projectState = new ProjectState();
+```
+- In our ``submiteHandler`` function  we can use ``projectState()``:
+```js
+    @autobind
+    private submitHandler(event: Event) {
+        event.preventDefault();
+        const userInput = this.gatherUserInput();
+        if (Array.isArray(userInput)) {
+            const [title, desc, people] = userInput;
+            projectState.addProject(title,desc,people)
+            this.clearInput();
+        }
+
+    }
+```
+- We then create a ``ProjectList`` class:
+```js
+class ProjectList {
+    templateElement: HTMLTemplateElement;
+    hostElement: HTMLDivElement;
+    element: HTMLElement;
+
+    constructor(private type: 'active' | 'finished') {
+        this.templateElement = document.getElementById('project-list') as HTMLTemplateElement;
+        this.hostElement = document.getElementById('app') as HTMLDivElement;
+
+        const importNode = document.importNode(this.templateElement.content, true);
+        this.element = importNode.firstElementChild as HTMLElement;
+        this.element.id = `${this.type}-projects`;
+        this.attach();
+        this.renderContent();
+    }
+
+    private renderContent() {
+        const listId = `${this.type}-project-list`;
+        this.element.querySelector('ul')!.id = listId;
+        this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
+    }
+
+    private attach() {
+        this.hostElement.insertAdjacentElement('beforeend', this.element);
+    }
+}
+```
+- We then instantiate the ``ProjectList`` based on active and finished classes:
+
+```js
+const activeProjectList = new ProjectList('active');
+const finishedProjectList = new ProjectList('finished');
+```
+
+#### More Classes & Custom Types
+```js
+private projects: any[] = [];
+```
+- We can improve on this and create a Project type
+```js
+enum ProjectStatus {Active, Finished}
+
+class Project {
+    constructor(
+        public id: string,
+        public title: string,
+        public description: string,
+        public people: number,
+        public status: ProjectStatus
+    ) {}
+}
+```
+- We can now use the ``Project`` class as a type:
+```js
+private projects: Project[] = [];
+```
+- We can update the ``addProject`` method:
+```js
+addProject(title: string, description:string, numOfPeople: number) {
+        const newProject = new Project(
+            Math.random.toString(),
+            title,
+            description,
+            numOfPeople,
+            ProjectStatus.Active
+        )
+        this.projects.push(newProject);
+        // loop through listeners
+        for (const listenerFn of this.listeners) {
+            // use a copy of projects with slice method
+            listenerFn(this.projects.slice())
+        }
+    }
+```
+- We can add a ``Listener`` type and use it where we are currently using any types:
+```js
+type Listener = (items: Project[]) => void;
+//..
+private listeners: Listener[] = [];
+```
+
+#### Filtering Projects with Enums
+- In our ``ProjectList`` class, we update the ``projectState`` to add filtering:
+```js
+//..
+        projectState.addListener((projects: Project[]) => {
+            const relevantProjects = projects.filter(project => {
+                if (this.type === 'active') {
+                    return project.status === ProjectStatus.Active
+                }
+                return project.status === ProjectStatus.Finished
+            })
+            this.assignedProjects = relevantProjects;
+            this.renderProjects();
+        })
+//..
+```
+
+#### Adding Inheritance and Generics
+- We can add components similar to react components by creating a ``Component`` class
+```js
+abstract class Component<T extends HTMLElement, U extends HTMLElement> {
+    templateElement: HTMLTemplateElement;
+    hostElement: T;
+    element: U;
+
+    constructor(
+        templateId: string,
+        hostElementId: string,
+        insertAtStart: boolean,
+        newElementId?: string, // optional parameters should always be last
+
+    ){
+        this.templateElement = document.getElementById(templateId) as HTMLTemplateElement;
+        this.hostElement = document.getElementById(hostElementId) as T;
+
+        const importNode = document.importNode(this.templateElement.content, true);
+        this.element = importNode.firstElementChild as U;
+        if (newElementId) {
+            this.element.id = newElementId;
+        }
+
+        this.attach(insertAtStart);
+    }
+
+    private attach(insert: boolean) {
+        this.hostElement.insertAdjacentElement(insert ? 'afterbegin' : 'beforeend', this.element);
+    }
+}
+```
+- The abstract class ensures that it can't be instantiated
+- We can further break down some classes and add generic types
+    - we also need to change some private classes so they can be accessible throughout the app... we can use the protected keyword instead
+```js
+type Listener<T> = (items: T[]) => void;
+
+class State<T> {
+    protected listeners: Listener<T>[] = [];
+
+    addListener(listenerFn: Listener<T>) {
+        this.listeners.push(listenerFn)
+    }
+}
+
+class ProjectState extends State<Project> {
+
+    private projects: Project[] = [];
+    private static instance: ProjectState;
+
+    private constructor() {
+        super()
+    }
+
+    static getInstance() {
+        if (this.instance) {
+            return this.instance;
+        }
+        this.instance = new ProjectState();
+        return this.instance;
+    }
+
+
+    addProject(title: string, description:string, numOfPeople: number) {
+        const newProject = new Project(
+            Math.random.toString(),
+            title,
+            description,
+            numOfPeople,
+            ProjectStatus.Active
+        )
+        this.projects.push(newProject);
+        // loop through listeners
+        for (const listenerFn of this.listeners) {
+            // use a copy of projects with slice method
+            listenerFn(this.projects.slice())
+        }
+    }
+}
+```
+
+#### Rendering Project Items with a Class
+- Our goal is to render lists with a class by instantiation rather than our current method:
+```js
+private renderProjects() {
+        //..
+        for (const projectItem of this.assignedProjects) {
+            const listItem = document.createElement('li');
+            //...
+        }
+    }
+```
+- Rather than using ``const listItem = document.createElement('li');`` we want to instantiate a class there instead
+- First we create the ``ProjectItem`` class:
+```js
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
+    private project: Project;
+
+    constructor(hostId: string, project: Project) {
+        super('single-project', hostId, false, project.id);
+        this.project = project;
+
+        this.configure();
+        this.renderContent();
+    }
+
+    configure() {}
+
+    renderContent() {
+        this.element.querySelector('h2')!.textContent = this.project.title;
+        this.element.querySelector('h3')!.textContent = this.project.people.toString();
+        this.element.querySelector('p')!.textContent = this.project.description;
+    }
+}
+```
+- We can now use the ``ProjectItem`` class to render:
+```js
+private renderProjects() {
+        const listEl = document.getElementById(`${this.type}-project-list`) as HTMLUListElement;
+        //improves performance, prevents first project from being added twice
+        listEl.innerHTML= '';
+        // loop through project items and render
+        for (const projectItem of this.assignedProjects) {
+            new ProjectItem(this.element.id, projectItem);
+        }
+    }
+```
+
+#### Using a Getter
+- We can use a getter to dynamically display the amount of people in the project
+```js
+get people() {
+        if (this.project.people === 1) {
+            return '1 person assigned'
+        } else {
+            return `{this.project.people} people assigned`
+        }
+    }
+```
+- We apply the getter here and access it like a property rather than calling a function:
+```js
+renderContent() {
+        this.element.querySelector('h2')!.textContent = this.project.title;
+        this.element.querySelector('h3')!.textContent = this.people;
+        this.element.querySelector('p')!.textContent = this.project.description;
+    }
+```
+
+#### Utliziing Interfaces to Implement Drag and Drop
+- We can create a contract for certain classes to sign to force the classes to implement certain methods that will help us with drag and drop
+    - To do this, we can use interfaces
+- In both TypeScript and JavaScript, the ``DragEvent`` is an interface that represents events related to drag and drop operations.
+    - It provides information and methods related to the dragging of an HTML element.
+```js
+interface Draggable {
+    dragStartHandler(event: DragEvent): void;
+    dragEndHandler(event: DragEvent): void;
+}
+
+interface DragTarget {
+    dragOverHandler(event: DragEvent): void;
+    dropHandler(event: DragEvent): void;
+    dragLeaveHandler(event: DragEvent): void;
+}
+```
+
+#### Drag Events and Reflecting the Current State in the UI
+```js
+@autobind
+    dragOverHandler(_: DragEvent) {
+        const listEl = this.element.querySelector('ul')!;
+        listEl.classList.add('droppable');
+    }
+
+    dropHandler(_: DragEvent) {}
+
+    @autobind
+    dragLeaveHandler(_: DragEvent) {
+        const listEl = this.element.querySelector('ul')!;
+        listEl.classList.remove('droppable');
+    }
+
+    configure() {
+        this.element.addEventListener('dragover', this.dragOverHandler);
+        this.element.addEventListener('dragleave', this.dragLeaveHandler);
+        this.element.addEventListener('drop', this.dropHandler);
+        //...
+    }
+```
+
+#### Adding a Droppable Area
+- Step one:
+```js
+@autobind
+    dragStartHandler(event: DragEvent): void {
+        event.dataTransfer!.setData('text/plain', this.project.id);
+        event.dataTransfer!.effectAllowed = 'move';
+    }
+```
+- Step two:
+```js
+@autobind
+    dragOverHandler(event: DragEvent) {
+        if (event.dataTransfer && event.dataTransfer.types[0] === 'text/plain') {
+            event.preventDefault();
+            const listEl = this.element.querySelector('ul')!;
+            listEl.classList.add('droppable');
+        }
+
+    }
+```
+
+#### Finishing Drag and Drop
+- We need to add a method that will switch the status of a project:
+```js
+moveProject(projectId: string, newStatus: ProjectStatus) {
+        const project = this.projects.find(project => project.id === projectId);
+        if (project) {
+            project.status = newStatus;
+            this.updateListeners();
+        }
+    }
+
+    private updateListeners() {
+        // loop through listeners
+        for (const listenerFn of this.listeners) {
+            // use a copy of projects with slice method
+            listenerFn(this.projects.slice())
+        }
+    }
+```
+- We can now use this in the ``dropHandler``:
+```js
+@autobind
+    dropHandler(event: DragEvent) {
+        const projectId = event.dataTransfer!.getData('text/plain');
+        projectState.moveProject(projectId, this.type === 'active' ? ProjectStatus.Active : ProjectStatus.Finished)
+    }
+```
