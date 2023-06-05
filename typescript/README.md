@@ -115,6 +115,13 @@
     - [Drag Events and Reflecting the Current State in the UI](#drag-events-and-reflecting-the-current-state-in-the-ui)
     - [Adding a Droppable Area](#adding-a-droppable-area)
     - [Finishing Drag and Drop](#finishing-drag-and-drop)
+1. [Modules and Namespaces](#modules-and-namespaces)
+    - [Writing Module Code - Your Options](#writing-module-code---your-options)
+    - [Working with Namespace](#working-with-namespace)
+    - [Organizing Files & Folders](#organizing-files--folders)
+    - [Using ES Modules](#using-es-modules)
+    - [Understanding various Import and Export Syntaxes](#understanding-various-import-and-export-syntaxes)
+    - [Wrap Up](#wrap-up-1)
 ---
 
 ---
@@ -2831,3 +2838,184 @@ moveProject(projectId: string, newStatus: ProjectStatus) {
         projectState.moveProject(projectId, this.type === 'active' ? ProjectStatus.Active : ProjectStatus.Finished)
     }
 ```
+
+---
+### Modules and Namespaces
+- It is not ideal to have all your code in one file
+- Instead you want to write ``Modular Code``... splitting your code into modules
+- Split your code into multiple files so each file is easy to manage and maintain
+    - We import and expoert to and from these files
+
+#### Writing Module Code - Your Options
+- We have different options when splitting code into multiple files
+- We could just create multiple files and have the TS compiler do the work
+    - This runs into problems of not being able to get the full benefit of types as they can be split into different files
+    - Not a great option for bigger projects
+- Or, we can use ``Namespaces and File Bundling``
+    - "namespaces" is a TS feature that adds special syntax to your code
+    - It allows you to group code together below a namespace and import namespaces into other files
+    - TS will bundle the different files into one file
+- Another option is using ``ES6 Imports/Exports``
+    - Modern JS out of the box supports import and export  statements which allows us to state which files depends on another file
+    - We use the ES6 import/export syntax which is also supported by TS
+    - Per file compilation but single script import
+    - Bundling via third party tools such as Webpack so we can have one file
+
+#### Working with Namespace
+- We can use the namespaces by using the ``namespaces`` keyword: ``namespace DDInterfaces {}``
+```js
+// drag-drop-interfaces.ts
+namespace DDInterfaces {
+    export interface Draggable {
+        dragStartHandler(event: DragEvent): void;
+        dragEndHandler(event: DragEvent): void;
+    }
+
+    export interface DragTarget {
+        dragOverHandler(event: DragEvent): void;
+        dropHandler(event: DragEvent): void;
+        dragLeaveHandler(event: DragEvent): void;
+    }
+}
+```
+- We can export features so they're available outside of the namespace
+- ``///`` three slashes is syntax that will be picked up by TS
+```js
+// app.ts
+/// <reference path="drag-drop-interfaces.ts" />
+```
+- We can use it to import files, but we have to do more to actually get the files to work.
+    - We can name all of our namespacess ``App`` and use the same namespace in our main file
+
+#### Organizing Files & Folders
+- If we only have 3 or 4 files, it may not be neccesary to organize files into folders
+- We also have to be careful when using the ``referece`` syntax when importing files
+    - Keeping all of the references in the main app.js file could work, but it could lead to bugs when files are chaged or moved
+- It is best to import directly to files that have dependencies rather than having all imports in the main file
+
+#### Using ES Modules
+- Using the reference syntax to import files will not show errors until runtime
+- ``export`` is default JS syntax which is also supported by TS whereas ``namespace`` is a TS convention
+```js
+// app.ts
+import { ProjectInput } from "./components/project-input";
+import { ProjectList } from "./components/project-list";
+
+new ProjectInput();
+new ProjectList('active');
+new ProjectList('finished');
+```
+```js
+// drag-drop.ts
+export interface Draggable {
+    dragStartHandler(event: DragEvent): void;
+    dragEndHandler(event: DragEvent): void;
+}
+
+export interface DragTarget {
+    dragOverHandler(event: DragEvent): void;
+    dropHandler(event: DragEvent): void;
+    dragLeaveHandler(event: DragEvent): void;
+}
+```
+```js
+import { Draggable } from '../models/drag-drop.js'
+import { Project } from '../models/project.js';
+import {Component} from './base-component.js'
+import { autobind } from '../decorators/autobind.js';
+
+
+// rendering project items with a class
+export class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements Draggable {
+    private project: Project;
+
+    get people() {
+        if (this.project.people === 1) {
+            return '1 person assigned'
+        } else {
+            return `${this.project.people} people assigned`
+        }
+    }
+
+    constructor(hostId: string, project: Project) {
+        super('single-project', hostId, false, project.id);
+        this.project = project;
+
+        this.configure();
+        this.renderContent();
+    }
+
+    @autobind
+    dragStartHandler(event: DragEvent): void {
+        event.dataTransfer!.setData('text/plain', this.project.id);
+        event.dataTransfer!.effectAllowed = 'move';
+    }
+
+    dragEndHandler(_: DragEvent): void {
+        console.log('Drag End')
+    }
+
+    configure() {
+        this.element.addEventListener('dragstart', this.dragStartHandler);
+        this.element.addEventListener('dragend', this.dragEndHandler);
+    }
+
+    renderContent() {
+        this.element.querySelector('h2')!.textContent = this.project.title;
+        this.element.querySelector('h3')!.textContent = this.people;
+        this.element.querySelector('p')!.textContent = this.project.description;
+    }
+}
+```
+- In ``tsconfig`` we no longer have to use ``"outFile": "./dist/bundle.js",`` and instead of using ``"module": "amd",`` we use ``"module": "ES2015", ``
+- In our html file, we have to import app.js as a module
+```html
+<script type="module" src="dist/app.js" defer></script>
+```
+
+#### Understanding various Import and Export Syntaxes
+- One way to import would be to use brackets:
+```js
+import { Validatable, validate } from '../util/validation.js'
+
+const titleValidatable: Validatable = {...}
+
+ if (
+            !validate(titleValidatable) ||
+            !validate(descriptionValidatable) ||
+            !validate(peopelValidatable)
+        ) {...}
+```
+- Or we can use ``*``:
+```js
+import * as Validation from '../util/validation.js'
+
+const titleValidatable: Validation.Validatable = {...}
+
+if (
+            !Validation.validate(titleValidatable) ||
+            !Validation.validate(descriptionValidatable) ||
+            !Validation.validate(peopelValidatable)
+        ) {...}
+```
+- We can also use aliases
+```js
+import { autobind as Autobin } from '../decorators/autobind.js';
+```
+- We can use one ``default`` export per file:
+```js
+export default abstract class Component<T extends HTMLElement, U extends HTMLElement> {...}
+```
+- We don't need brackets to import the file:
+```js
+import Component from './base-component.js'
+```
+- We also don't have to name the file ``Component``, we can name it whatever we want, the default is what gets exported regardless of what we name it
+
+#### Wrap Up
+- ES Modules are recommended over namespaces because of the extra type safety
+    - With ES modules, every file has to clearly specify what it wants
+- However, ES Modules only work on modern browsers as the browser is relied on to import individual files
+- To make all of this work on older browsers, we need to use a bundler
+- JavaScript Modules (Overview): https://medium.com/computed-comparisons/commonjs-vs-amd-vs-requirejs-vs-es6-modules-2e814b114a0b
+- More on ES Modules: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
