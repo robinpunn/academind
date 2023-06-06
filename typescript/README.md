@@ -122,6 +122,13 @@
     - [Using ES Modules](#using-es-modules)
     - [Understanding various Import and Export Syntaxes](#understanding-various-import-and-export-syntaxes)
     - [Wrap Up](#wrap-up-1)
+1. [Using Webpack with TypeScript](#using-webpack-with-typescript)
+    - [What is Webpack and Why do we need it](#what-is-webpack-and-why-do-we-need-it)
+    - [Installing Webpack and Installing Dependencies](#installing-webpack-and-installing-dependencies)
+    - [Adding Entry & Output Configuration](#adding-entry--output-configuration)
+    - [Adding TypeScript Support with the ts-loader Package](#adding-typescript-support-with-the-ts-loader-package)
+    - [Finishing the Setup and Adding webpack-dev-server](#finishing-the-setup-and-adding-webpack-dev-server)
+    - [Adding a Production Workflow](#adding-a-production-workflow)
 ---
 
 ---
@@ -3019,3 +3026,148 @@ import Component from './base-component.js'
 - To make all of this work on older browsers, we need to use a bundler
 - JavaScript Modules (Overview): https://medium.com/computed-comparisons/commonjs-vs-amd-vs-requirejs-vs-es6-modules-2e814b114a0b
 - More on ES Modules: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
+
+---
+### Using Webpack with TypeScript
+- Official Webpack Docs: https://webpack.js.org/
+- While using ES6 mades code more managable, it introduces a disadvantage of needing to bundle files
+- To fix this issue, we can use webpack
+#### What is Webpack and Why do we need it
+- The disadvantage we have using ES6 is multiple HTTP requests made by the browser to load our page
+- Webpack is a toll that will help us bundle our files together
+**What is Webpack**
+- It is a bundling and build orchestartion tool
+    - It reduces the amount of HTTP requests by bundling code together
+- Webpack optimizes our code and allows us to add more build steps
+
+***Normal Setup***
+- Multiple files and imports (requires multiple http requests)
+- Unoptimized code (not as small as possible)
+- External development server needed
+
+***With Webpack***
+- Code bundles, less imports required
+- Optimized (minified) code, less code to download
+- More buld steps can easily be added
+
+#### Installing Webpack and Installing Dependencies
+```bash
+npm install --save-dev webpack webpack-cli webpack-dev-server typescript ts-loader
+```
+```json
+ "devDependencies": {
+    "lite-server": "^2.6.1",
+    "ts-loader": "^9.4.3",
+    "typescript": "^5.1.3",
+    "webpack": "^5.85.1",
+    "webpack-cli": "^5.1.3",
+    "webpack-dev-server": "^4.15.0"
+  }
+```
+
+#### Adding Entry & Output Configuration
+- Create a ``webpack.config.js`` file
+```js
+const path = require('path');
+
+module.exports = {
+    entry: './src/apps.ts',
+    output: {
+        filename: 'bundle.js',
+        path: path.resolve(__dirname, 'dist')
+    }
+};
+```
+- Webpack by default doesn't know what to do with TS files
+
+#### Adding TypeScript Support with the ts-loader Package
+```js
+const path = require("path");
+
+module.exports = {
+  entry: "./src/apps.ts",
+  output: {
+    filename: "bundle.js",
+    path: path.resolve(__dirname, "dist"),
+  },
+  devtool: "inline-source-map",
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: "ts-loader",
+        exclude: /node_modules/,
+      },
+    ],
+  },
+  resolve: {
+    extensions: [".ts", ".js"],
+  },
+};
+```
+#### Finishing the Setup and Adding webpack-dev-server
+- For spinning up a local development server that serves our website.
+    - When using the latest Webpack version, you must edit the webpack.config.js file slightly.
+1. Add a devServer option
+```js
+devServer: {
+  static: [
+    {
+      directory: path.join(__dirname),
+    },
+  ],
+},
+```
+1. Set output.publicPath to '/dist/'
+```js
+output: {
+  filename: 'bundle.js',
+  path: path.resolve(__dirname, 'dist'),
+  publicPath: '/dist/'
+},
+```
+- Finished file:
+```js
+const path = require('path');
+
+module.exports = {
+  mode: 'development',
+  entry: './src/app.ts',
+  devServer: {
+    static: [
+      {
+        directory: path.join(__dirname),
+      },
+    ],
+  },
+  output: {
+    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist'),
+    publicPath: '/dist/',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+    ],
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
+};
+```
+
+#### Adding a Production Workflow
+- We typically want a different workflow for production builds
+- We can create a ``webpack.config.prod.js``
+```bash
+npm install --save-dev clean-webpack-plugin
+```
+- This plug in will clear the dist folder every time a new build is created
+- We can update the build command:
+```json
+"build": "webpack --config webpack.config.prod.js"
+```
