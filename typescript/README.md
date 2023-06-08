@@ -129,6 +129,11 @@
     - [Adding TypeScript Support with the ts-loader Package](#adding-typescript-support-with-the-ts-loader-package)
     - [Finishing the Setup and Adding webpack-dev-server](#finishing-the-setup-and-adding-webpack-dev-server)
     - [Adding a Production Workflow](#adding-a-production-workflow)
+1. [Third Party Libraries and TypeScript](#third-party-libraries-and-typescript)
+    - [Using JavaScript Libraries with TypeScript](#using-javascript-libraries-with-typescript)
+    - [Using "declare" as a "last resort"](#using-declare-as-a-last-resort)
+    - [No Types Needed: class-transformer](#no-types-needed-class-transformer)
+    - [TypeScript embracing: class-validator](#typescript-embracing-class-validator)
 ---
 
 ---
@@ -3170,4 +3175,119 @@ npm install --save-dev clean-webpack-plugin
 - We can update the build command:
 ```json
 "build": "webpack --config webpack.config.prod.js"
+```
+
+---
+### Third Party Libraries and TypeScript
+- Modern web development generally relies on third party libraries
+- There are normal libraries that can be used with TS
+- There are certain TS specific libraries
+
+#### Using JavaScript Libraries with TypeScript
+- [Lodash](https://lodash.com/) is a popular JS utility library
+```bash
+npm i --save lodash
+```
+```js
+import _ from 'lodash'
+
+console.log(_.shuffle([1,2,3,4]));
+```
+- The above would not work as this is a library built for JS
+    - TS doesn't understand what is in the package as it is all JS files
+- If we change the tsconfig, we can still compile the code with error, but the ``console.log()`` will work
+```json
+"noEmitOnError": false,
+```
+- Some JS libraries will have a types library for TS: https://www.npmjs.com/package/@types/lodash
+```bash
+npm install --save @types/lodash
+```
+- Most popular libraries will have an ``@types/library`` package for TS so JS libraries can be used with TS without throwing console errors
+    - Technically the packages still work, but the console will throw TS errors and we have to allow compiling with errors
+
+#### Using "declare" as a "last resort"
+- There are some JS libraries that won't have a "types" install
+
+```html
+ <body>
+    <script>
+      var GLOBAL = "THIS IS SET";
+    </script>
+  </body>
+```
+```js
+console.log(GLOBAL) // Cannot find name 'GLOBAL'. Did you mean 'global'?
+```
+- Even though we set the global in our HTML, TS does not recognize it
+- We can use the ``declare`` variable available to TS
+```js
+declare const GLOBAL:string;
+```
+- We can use declare for packages or variables we know will exist but TS will not be aware of
+
+#### No Types Needed: class-transformer
+```js
+// product.model.ts
+export class Product {
+    title: string;
+    price: number;
+
+    constructor(t:string, p:number) {
+        this.title = t;
+        this.price = p;
+    }
+
+    getInformation() {
+        return [this.title, `$${this.price}`];
+    }
+}
+```
+```js
+// app.ts
+import {Product} from './product.model'
+
+const products = [
+    {title: 'A Book', price: 29.99},
+    {title: 'The Product', price: 5.99}
+]
+
+const loadProducts = products.map(product => {
+    return new Product(product.title, product.price);
+})
+
+for (const product of loadProducts) {
+    console.log(product.getInformation())
+}
+```
+- The above could be tedious for bigger projects
+- There is a library that can help transform classes: https://www.npmjs.com/package/class-transformer
+```bash
+npm install class-transformer --save
+npm install reflect-metadata --save
+```
+```js
+import 'reflect-metadata'
+import { plainToInstance } from 'class-transformer'
+```
+- In tsconfig, we have to enable a setting to allow this module to work:
+```json
+ "moduleResolution": "node",                     /* Specify how TypeScript looks up a file from a given module specifier. */
+ ```
+- We can use the ``plainToInstance`` method instead of mapping like we did eariler:
+```js
+const loadProducts = plainToInstance(Product, products)
+```
+
+#### TypeScript embracing: class-validator
+- Allow use of decorator and non-decorator based validation: https://www.npmjs.com/package/class-validator
+```bash
+npm install class-validator --save
+```
+```js
+import {IsNotEmpty, IsNumber, IsPositive} from 'class-validator';
+```
+- In tsconfig, we have to allow experimental decorators:
+```json
+"experimentalDecorators": true, /* Enable experimental support for legacy experimental decorators. */
 ```
