@@ -3291,3 +3291,19 @@ import {IsNotEmpty, IsNumber, IsPositive} from 'class-validator';
 ```json
 "experimentalDecorators": true, /* Enable experimental support for legacy experimental decorators. */
 ```
+
+---
+### Select and Share a Place App
+- Building an app that will allows us to look up addresses and convert it to coordinates
+#### Project Setup
+```html
+<body>
+    <div id="map">
+        <p>Please Enter an Address</p>
+    </div>
+    <form>
+        <input type="text" id="address" />
+        <button type="submit">SEARCH PLACE</button>
+    </form>
+</body>
+```
