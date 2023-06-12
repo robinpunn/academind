@@ -1,31 +1,42 @@
-import 'reflect-metadata'
-import { plainToInstance } from 'class-transformer'
-import { validate } from 'class-validator'
+import axios from "axios";
+// require('dotenv').config()
 
-import {Product} from './product.model'
+const apiKey = ""
 
-const products = [
-    {title: 'A Book', price: 29.99},
-    {title: 'The Product', price: 5.99}
-]
+declare var google: any
 
-// let product = new Product('The Product', 5.99)
+type GoogleGeocoding = {
+    results: {geometry: {location: {lat:number, lng: number}}}[];
+    status: 'OK' | 'ZERO_RESULTS';
+}
 
-// const loadProducts = products.map(product => {
-//     return new Product(product.title, product.price);
-// })
+const form = document.querySelector('form') as HTMLFormElement;
+const addressInput = document.getElementById('address') as HTMLInputElement;
 
-// const loadProducts = plainToInstance(Product, products)
+function searchAddressHandler(event: Event) {
+    event.preventDefault();
+    const enteredAddress = addressInput.value;
 
-// for (const product of loadProducts) {
-//     console.log(product.getInformation())
-// }
+    // send this to google's API
+    axios.get<GoogleGeocoding>(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${enteredAddress}&key=${apiKey}`
+    )
+    .then(response => {
+        if (response.data.status !== "OK") {
+            throw new Error('Could not fetch location')
+        }
+        const coordinates = response.data.results[0].geometry.location
+        // const map = new google.maps.Map(document.getElementById("map"), {
+        //     center: coordinates,
+        //     zoom: 8
+        // })
 
-const newProd = new Product('', -5.99)
-validate(newProd).then(errors => {
-    if (errors.length > 0) {
-        console.log('ERRORS: ', errors)
-    } else {
-        console.log(newProd.getInformation())
-    }
-})
+        // new google.maps.Marker({position: coordinates, map:map})
+    })
+    .catch(err =>{
+        alert(err.message);
+        console.log(err);
+    });
+}
+
+form.addEventListener('submit', searchAddressHandler);

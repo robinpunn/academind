@@ -3307,3 +3307,85 @@ import {IsNotEmpty, IsNumber, IsPositive} from 'class-validator';
     </form>
 </body>
 ```
+
+#### Getting User Input
+```js
+const form = document.querySelector('form') as HTMLFormElement;
+const addressInput = document.getElementById('address') as HTMLInputElement;
+
+function searchAddressHandler(event: Event) {
+    event.preventDefault();
+    const enteredAddress = addressInput.value;
+
+    // send this to google's API
+
+}
+
+form.addEventListener('submit', searchAddressHandler);
+```
+
+#### Using Axios
+- [Axios](https://www.npmjs.com/package/axios) supports TS out of the box so extra libraries don't need to be installed
+- Libraries that support TS will autocomplete effects for things such as methods
+```js
+import axios from "axios";
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+const apiKey = process.env.GOOGLE_API
+
+const form = document.querySelector('form') as HTMLFormElement;
+const addressInput = document.getElementById('address') as HTMLInputElement;
+
+function searchAddressHandler(event: Event) {
+    event.preventDefault();
+    const enteredAddress = addressInput.value;
+
+    // send this to google's API
+    axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURI(enteredAddress)}&key=${apiKey}`)
+}
+
+form.addEventListener('submit', searchAddressHandler);
+```
+- The ``encodeURI`` method parses a string into a URL compatible string
+
+```js
+//...
+type GoogleGeocoding = {
+    results: {geometry: {location: {lat:number, lng: number}}}[];
+    status: 'OK' | 'ZERO_RESULTS';
+}
+
+//...
+
+function searchAddressHandler(event: Event) {
+    event.preventDefault();
+    const enteredAddress = addressInput.value;
+
+    // send this to google's API
+    axios.get<GoogleGeocoding>(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${enteredAddress}&key=${apiKey}`
+    )
+    .then(response => {
+        if (response.data.status !== "OK") {
+            throw new Error('Could not fetch location')
+        }
+        const coordinates = response.data.results[0].geometry.location
+    })
+    .catch(err =>{
+        alert(err.message);
+        console.log(err);
+    });
+}
+
+form.addEventListener('submit', searchAddressHandler);
+```
+- We can create a custom type for the API return
+
+#### Rendering a Map
+```html
+<script async
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
+</script>
+```
