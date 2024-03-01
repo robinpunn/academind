@@ -1,10 +1,6 @@
+# JavaScript Games
+A collection of JavaScript games
 
----
+## Space Invaders
+Created following this [tutorial](https://www.youtube.com/watch?v=cuudnyDyWGE&list=PLYElE_rzEw_tw6scwjv96oEABmnMSQoQW) created by [Frank's Labratory](https://www.youtube.com/@Frankslaboratory)
 
-## Notes for Academind Courses
-
----
-
-### [NodeJS - The Complete Guide](https://github.com/robinpunn/academind/tree/main/node)
-
-### [Understanding TypeScript](https://github.com/robinpunn/academind/tree/main/typescript)
